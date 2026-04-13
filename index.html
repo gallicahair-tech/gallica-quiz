@@ -8,10 +8,11 @@
 <style>
 body {
   font-family: sans-serif;
-  max-width: 500px;
+  max-width: 520px;
   margin: auto;
   padding: 20px;
   background: #f7f7f7;
+  color: #111;
 }
 .card {
   background: #fff;
@@ -26,18 +27,44 @@ button, input, select {
   margin-top: 10px;
   box-sizing: border-box;
   font-size: 16px;
+  border-radius: 8px;
+}
+button {
+  border: 1px solid #999;
+  background: #f3f3f3;
+  cursor: pointer;
+}
+button:hover {
+  background: #ececec;
 }
 .hidden {
   display: none;
 }
 .pass {
   color: green;
+  font-weight: bold;
 }
 .fail {
-  color: red;
+  color: #c62828;
+  font-weight: bold;
 }
 .choice {
   text-align: left;
+}
+.choice.selected {
+  background: #dfe9ff;
+  border-color: #4d7cff;
+}
+.small {
+  font-size: 14px;
+  color: #666;
+}
+.review-box {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
 }
 </style>
 </head>
@@ -53,14 +80,16 @@ button, input, select {
 
 <!-- ログイン -->
 <div id="loginScreen" class="card hidden">
+  <h3>ログイン</h3>
   <input id="loginId" placeholder="ID">
   <input id="loginPass" type="password" placeholder="PASS">
   <button onclick="doLogin()">ログイン</button>
-  <div id="loginError" style="color:red;"></div>
+  <div id="loginError" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- スタッフ -->
+<!-- スタッフ情報 -->
 <div id="staffScreen" class="card hidden">
+  <h3>受験者情報</h3>
   <input id="staffNameInput" placeholder="名前">
   <select id="storeInput">
     <option value="">店舗を選択</option>
@@ -80,7 +109,7 @@ button, input, select {
   </select>
 
   <button onclick="startQuiz()">スタート</button>
-  <div id="staffError" style="color:red;"></div>
+  <div id="staffError" style="color:red; margin-top:10px;"></div>
 </div>
 
 <!-- クイズ -->
@@ -92,9 +121,10 @@ button, input, select {
 
 <!-- マイページ -->
 <div id="mypageScreen" class="card hidden">
+  <h3>マイページ</h3>
   <input id="mypageName" placeholder="名前">
   <button onclick="loadMyPage()">表示</button>
-  <div id="mypageResult"></div>
+  <div id="mypageResult" style="margin-top:12px;"></div>
 </div>
 
 <script>
@@ -201,17 +231,23 @@ function renderQuestion() {
 
   const quizEl = document.getElementById("quizScreen");
   quizEl.innerHTML = `
-    <p>${genreName} ${current + 1} / ${questions.length}</p>
+    <p class="small">${genreName} ${current + 1} / ${questions.length}</p>
     <h3>${q.q}</h3>
   `;
 
   q.c.forEach((choice, i) => {
-    quizEl.innerHTML += `<button class="choice" onclick="selectChoice(${i})">${choice}</button>`;
+    quizEl.innerHTML += `<button id="choice-${i}" class="choice" onclick="selectChoice(${i})">${choice}</button>`;
   });
 }
 
 function selectChoice(i) {
   selected = i;
+  questions[current].c.forEach((_, index) => {
+    const btn = document.getElementById(`choice-${index}`);
+    if (btn) btn.classList.remove("selected");
+  });
+  const selectedBtn = document.getElementById(`choice-${i}`);
+  if (selectedBtn) selectedBtn.classList.add("selected");
 }
 
 function nextQuestion() {
@@ -247,7 +283,7 @@ function finishQuiz() {
     const userAnswer = answers[i];
     const correct = userAnswer === q.a;
     reviewHtml += `
-      <div style="margin-top:12px; padding:12px; border:1px solid #ddd; border-radius:8px;">
+      <div class="review-box">
         <p><strong>Q${i + 1}. ${q.q}</strong></p>
         <p>あなたの回答：${q.c[userAnswer]}</p>
         <p>正解：${q.c[q.a]}</p>
@@ -262,7 +298,7 @@ function finishQuiz() {
     <p>${staffName} / ${storeName}</p>
     <p>${score} / ${questions.length}</p>
     <p>${rate}%</p>
-    <p>${isPass}</p>
+    <p class="${rate === 100 ? 'pass' : 'fail'}">${isPass}</p>
     ${reviewHtml}
     <button onclick="location.reload()">もう一度受ける</button>
   `;
@@ -310,7 +346,9 @@ async function loadMyPage() {
       })
     });
 
-    const data = await res.json();
+    const responseData = await res.json();
+    const data = responseData.results || [];
+
     const bestScores = {};
     const totalGenres = Object.keys(quizSets).length;
     let clearCount = 0;
@@ -319,7 +357,7 @@ async function loadMyPage() {
       const testName = r[6];
       const score = Number(r[3]);
       const total = Number(r[4]);
-      const percent = Math.round(score / total * 100);
+      const percent = total > 0 ? Math.round(score / total * 100) : 0;
 
       if (!bestScores[testName] || bestScores[testName] < percent) {
         bestScores[testName] = percent;
