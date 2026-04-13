@@ -66,6 +66,22 @@ button:hover {
   border-radius: 8px;
   background: #fafafa;
 }
+.badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f1f1;
+  font-size: 14px;
+}
+.star {
+  font-size: 24px;
+  margin-top: 8px;
+}
+.section-title {
+  font-weight: bold;
+  margin-top: 12px;
+}
 </style>
 </head>
 
@@ -74,17 +90,26 @@ button:hover {
 <h2>Gallica Quiz</h2>
 
 <div class="card">
-  <button onclick="showQuizScreen()">クイズを受ける</button>
-  <button onclick="showMyPageScreen()">マイページ</button>
+  <button onclick="openQuizLogin()">クイズを受ける</button>
+  <button onclick="openMyPageLogin()">マイページ</button>
 </div>
 
-<!-- ログイン -->
-<div id="loginScreen" class="card hidden">
-  <h3>ログイン</h3>
-  <input id="loginId" placeholder="ID">
-  <input id="loginPass" type="password" placeholder="PASS">
-  <button onclick="doLogin()">ログイン</button>
-  <div id="loginError" style="color:red; margin-top:10px;"></div>
+<!-- クイズ用ログイン -->
+<div id="quizLoginScreen" class="card hidden">
+  <h3>クイズ ログイン</h3>
+  <input id="quizLoginId" placeholder="ID">
+  <input id="quizLoginPass" type="password" placeholder="PASS">
+  <button onclick="doQuizLogin()">ログイン</button>
+  <div id="quizLoginError" style="color:red; margin-top:10px;"></div>
+</div>
+
+<!-- マイページ用ログイン -->
+<div id="mypageLoginScreen" class="card hidden">
+  <h3>マイページ ログイン</h3>
+  <input id="mypageLoginId" placeholder="ID">
+  <input id="mypageLoginPass" type="password" placeholder="PASS">
+  <button onclick="doMyPageLogin()">ログイン</button>
+  <div id="mypageLoginError" style="color:red; margin-top:10px;"></div>
 </div>
 
 <!-- スタッフ情報 -->
@@ -165,7 +190,8 @@ let storeName = "";
 let genreName = "";
 
 function hideAllScreens() {
-  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("quizLoginScreen").classList.add("hidden");
+  document.getElementById("mypageLoginScreen").classList.add("hidden");
   document.getElementById("staffScreen").classList.add("hidden");
   document.getElementById("quizScreen").classList.add("hidden");
   document.getElementById("resultScreen").classList.add("hidden");
@@ -173,20 +199,20 @@ function hideAllScreens() {
   document.getElementById("nextBtn").classList.add("hidden");
 }
 
-function showQuizScreen() {
+function openQuizLogin() {
   hideAllScreens();
-  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("quizLoginScreen").classList.remove("hidden");
 }
 
-function showMyPageScreen() {
+function openMyPageLogin() {
   hideAllScreens();
-  document.getElementById("mypageScreen").classList.remove("hidden");
+  document.getElementById("mypageLoginScreen").classList.remove("hidden");
 }
 
-function doLogin() {
-  const idValue = document.getElementById("loginId").value.trim();
-  const passValue = document.getElementById("loginPass").value.trim();
-  const errorEl = document.getElementById("loginError");
+function doQuizLogin() {
+  const idValue = document.getElementById("quizLoginId").value.trim();
+  const passValue = document.getElementById("quizLoginPass").value.trim();
+  const errorEl = document.getElementById("quizLoginError");
 
   if (idValue === VALID_ID && passValue === VALID_PASS) {
     hideAllScreens();
@@ -195,6 +221,48 @@ function doLogin() {
   } else {
     errorEl.textContent = "IDまたはPASSが違います。";
   }
+}
+
+function doMyPageLogin() {
+  const idValue = document.getElementById("mypageLoginId").value.trim();
+  const passValue = document.getElementById("mypageLoginPass").value.trim();
+  const errorEl = document.getElementById("mypageLoginError");
+
+  if (idValue === VALID_ID && passValue === VALID_PASS) {
+    hideAllScreens();
+    document.getElementById("mypageScreen").classList.remove("hidden");
+    errorEl.textContent = "";
+  } else {
+    errorEl.textContent = "IDまたはPASSが違います。";
+  }
+}
+
+function getStars(percent) {
+  if (percent === 100) return "⭐⭐⭐";
+  if (percent >= 80) return "⭐⭐";
+  if (percent >= 60) return "⭐";
+  return "";
+}
+
+function getBadge(percent) {
+  if (percent === 100) return "👑 マスター";
+  if (percent >= 80) return "🎖 エキスパート";
+  if (percent >= 60) return "🏅 チャレンジャー";
+  return "なし";
+}
+
+function getTitle(scoreMap) {
+  const percents = Object.values(scoreMap);
+  const hasAllMaster = percents.length === Object.keys(quizSets).length && percents.every(v => v === 100);
+  if (hasAllMaster) return "Master";
+
+  const highCount = percents.filter(v => v >= 80).length;
+  const starCount = percents.filter(v => v >= 60).length;
+
+  if (highCount >= Object.keys(quizSets).length) return "Gold";
+  if (highCount >= 1) return "Silver";
+  if (starCount >= 1) return "Starter";
+  return "Beginner";
 }
 
 function startQuiz() {
@@ -276,7 +344,8 @@ function finishQuiz() {
   document.getElementById("resultScreen").classList.remove("hidden");
 
   const rate = Math.round(score / questions.length * 100);
-  const isPass = rate === 100 ? "合格" : "未達";
+  const stars = getStars(rate);
+  const badge = getBadge(rate);
 
   let reviewHtml = "";
   questions.forEach((q, i) => {
@@ -298,7 +367,8 @@ function finishQuiz() {
     <p>${staffName} / ${storeName}</p>
     <p>${score} / ${questions.length}</p>
     <p>${rate}%</p>
-    <p class="${rate === 100 ? 'pass' : 'fail'}">${isPass}</p>
+    <div class="star">${stars || "☆"}</div>
+    <div class="badge">${badge}</div>
     ${reviewHtml}
     <button onclick="location.reload()">もう一度受ける</button>
   `;
@@ -350,8 +420,6 @@ async function loadMyPage() {
     const data = responseData.results || [];
 
     const bestScores = {};
-    const totalGenres = Object.keys(quizSets).length;
-    let clearCount = 0;
 
     data.forEach(r => {
       const testName = r[6];
@@ -368,19 +436,20 @@ async function loadMyPage() {
     for (const key in quizSets) {
       const name = quizSets[key].name;
       const percent = bestScores[name] || 0;
+      const stars = getStars(percent);
+      const badge = getBadge(percent);
 
-      if (percent === 100) {
-        html += `<p class="pass">${name}：100点 合格</p>`;
-        clearCount++;
-      } else {
-        html += `<p class="fail">${name}：未達 (${percent}%)</p>`;
-      }
+      html += `
+        <div class="review-box">
+          <p><strong>${name}</strong></p>
+          <p>${percent}%</p>
+          <div class="star">${stars || "☆"}</div>
+          <div class="badge">${badge}</div>
+        </div>
+      `;
     }
 
-    let title = "Starter";
-    if (clearCount === totalGenres) title = "Master";
-    else if (clearCount >= 2) title = "Gold";
-    else if (clearCount >= 1) title = "Silver";
+    const title = getTitle(bestScores);
 
     document.getElementById("mypageResult").innerHTML = `
       <h3>${targetName} さん</h3>
