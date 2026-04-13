@@ -1,377 +1,241 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gallica Quiz</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 20px;
-      background: #fafafa;
-      color: #111;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallica Quiz</title>
 
-    .card {
-      background: white;
-      padding: 16px;
-      border-radius: 10px;
-      margin-top: 16px;
-      border: 1px solid #ddd;
-    }
-
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-
-    input, select {
-      border: 1px solid #ccc;
-      background: #fff;
-    }
-
-    button {
-      background: black;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .choice {
-      background: #f3f3f3;
-      color: black;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-
-    .choice.selected {
-      background: #e8eefc;
-      border-color: #9bb3ff;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .error {
-      color: #c62828;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    .review-box {
-      background: #f8f8f8;
-      border-radius: 8px;
-      padding: 12px;
-      margin-top: 12px;
-      border: 1px solid #eee;
-    }
-  </style>
+<style>
+body { font-family: sans-serif; max-width: 500px; margin:auto; padding:20px;}
+.card { background:#fff; padding:16px; margin-top:16px; border:1px solid #ddd; border-radius:10px;}
+button { width:100%; padding:10px; margin-top:10px;}
+.hidden { display:none;}
+.pass { color:green;}
+.fail { color:red;}
+</style>
 </head>
+
 <body>
 
-  <h2>Gallica Quiz</h2>
+<h2>Gallica Quiz</h2>
 
-  <div id="loginScreen" class="card">
-    <h3>ログイン</h3>
-    <input id="loginId" placeholder="ID">
-    <input id="loginPass" type="password" placeholder="PASS">
-    <button onclick="login()">ログイン</button>
-    <div id="loginError" class="error"></div>
-  </div>
+<div class="card">
+  <button onclick="showQuiz()">クイズを受ける</button>
+  <button onclick="showMyPage()">マイページ</button>
+</div>
 
-  <div id="staffScreen" class="card hidden">
-    <h3>受験者情報</h3>
-    <input id="staffNameInput" placeholder="名前">
-    <select id="storeInput">
-      <option value="">店舗選択</option>
-      <option value="表参道">表参道</option>
-      <option value="青山">青山</option>
-      <option value="渋谷">渋谷</option>
-      <option value="蔵前">蔵前</option>
-      <option value="両国">両国</option>
-      <option value="錦糸町">錦糸町</option>
-      <option value="福岡">福岡</option>
-    </select>
+<!-- ログイン -->
+<div id="login" class="card hidden">
+  <input id="id" placeholder="ID">
+  <input id="pass" placeholder="PASS">
+  <button onclick="login()">ログイン</button>
+</div>
 
-    <select id="genreInput">
-      <option value="">ジャンル選択</option>
-      <option value="color">カラー基礎</option>
-      <option value="straight">縮毛矯正基礎</option>
-    </select>
+<!-- スタッフ -->
+<div id="staff" class="card hidden">
+  <input id="name" placeholder="名前">
+  <select id="store">
+    <option>表参道</option>
+    <option>渋谷</option>
+  </select>
 
-    <button onclick="startQuiz()">スタート</button>
-    <div id="staffError" class="error"></div>
-  </div>
+  <select id="genre">
+    <option value="color">カラー</option>
+    <option value="straight">縮毛矯正</option>
+  </select>
 
-  <div id="quizScreen" class="card hidden">
-    <div id="progress"></div>
-    <h3 id="questionText"></h3>
-    <div id="choices"></div>
-    <button onclick="nextQuestion()">次へ</button>
-    <div id="quizError" class="error"></div>
-  </div>
+  <button onclick="start()">スタート</button>
+</div>
 
-  <div id="resultScreen" class="card hidden">
-    <h3>結果</h3>
-    <p><strong>名前：</strong><span id="resultName"></span></p>
-    <p><strong>店舗：</strong><span id="resultStore"></span></p>
-    <p><strong>ジャンル：</strong><span id="resultGenre"></span></p>
-    <p><strong>点数：</strong><span id="resultScore"></span></p>
-    <p><strong>正答率：</strong><span id="resultRate"></span></p>
+<!-- クイズ -->
+<div id="quiz" class="card hidden"></div>
+<button id="nextBtn" class="hidden" onclick="next()">次へ</button>
 
-    <div id="review"></div>
+<!-- 結果 -->
+<div id="result" class="card hidden"></div>
 
-    <button onclick="location.reload()">もう一度受ける</button>
-  </div>
+<!-- マイページ -->
+<div id="mypage" class="card hidden">
+  <input id="mypageName" placeholder="名前">
+  <button onclick="loadMyPage()">表示</button>
+  <div id="mypageResult"></div>
+</div>
 
-  <script>
-    const VALID_ID = "gallicahair";
-    const VALID_PASS = "2603";
+<script>
 
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec";
+const GAS_URL = "ここにGAS URL";
 
-    const colorQuestions = [
-      {
-        q: "オキシ6%の主な役割は？",
-        c: ["色味だけを入れる", "明るくしながら発色させる", "ダメージを抑える", "色持ちを上げる"],
-        a: 1,
-        e: "6%はリフトしながら発色させる基本のオキシです。"
-      },
-      {
-        q: "赤みを消す補色は？",
-        c: ["赤", "青", "黄", "紫"],
-        a: 1,
-        e: "赤みを抑える時は青系を使ってコントロールします。"
-      },
-      {
-        q: "トーンダウン時に使いやすいオキシは？",
-        c: ["12%", "9%", "6%", "3%"],
-        a: 3,
-        e: "トーンダウンや色味補充では3%が基本です。"
-      },
-      {
-        q: "既染部に強いオキシを使うリスクは？",
-        c: ["ツヤが増す", "ムラとダメージが出やすい", "色持ちが良くなる", "退色しなくなる"],
-        a: 1,
-        e: "既染部に強い薬を重ねるとムラや負担につながります。"
-      },
-      {
-        q: "オキシ3%の主な用途は？",
-        c: ["ハイトーンにする", "トーンダウンや色味補充", "ブリーチの代わり", "強いリフト"],
-        a: 1,
-        e: "3%はリフト力が弱く、色味を入れる時や暗くする時に向いています。"
-      }
-    ];
+const VALID_ID = "gallicahair";
+const VALID_PASS = "2603";
 
-    const straightQuestions = [
-      {
-        q: "縮毛矯正の1剤の主な役割は？",
-        c: ["固定する", "結合を切る", "ツヤを出す", "色を入れる"],
-        a: 1,
-        e: "1剤は還元によりシスチン結合を切断し、形を変えられる状態にします。"
-      },
-      {
-        q: "縮毛矯正の2剤の役割は？",
-        c: ["結合を切る", "髪を乾かす", "結合を再結合させる", "色を入れる"],
-        a: 2,
-        e: "2剤は酸化により切った結合を再結合させ、形を固定します。"
-      },
-      {
-        q: "還元剤の働きとして正しいのは？",
-        c: ["髪を硬くする", "結合を切る", "水分を補給する", "キューティクルを閉じる"],
-        a: 1,
-        e: "還元剤はシスチン結合を切ることで髪を柔らかくします。"
-      },
-      {
-        q: "アイロン操作の目的は？",
-        c: ["色を入れる", "形を整える", "水分を増やす", "ダメージを減らす"],
-        a: 1,
-        e: "アイロンでストレート形状を作ります。"
-      },
-      {
-        q: "高温すぎるアイロンのリスクは？",
-        c: ["ツヤが増える", "ダメージやビビリ毛", "色持ちが良くなる", "問題ない"],
-        a: 1,
-        e: "高温はタンパク変性を起こし、ビビリ毛の原因になります。"
-      }
-    ];
+let questions = [];
+let score = 0;
+let current = 0;
+let staffName = "";
+let storeName = "";
+let genreName = "";
 
-    const quizSets = {
-      color: {
-        name: "カラー基礎",
-        questions: colorQuestions
-      },
-      straight: {
-        name: "縮毛矯正基礎",
-        questions: straightQuestions
-      }
-    };
+const quizSets = {
+  color: {
+    name: "カラー",
+    questions: [
+      {q:"オキシ6%の役割は？",c:["色だけ","明るく発色","補修","持ちUP"],a:1,e:"基本"},
+      {q:"赤み消す色は？",c:["青","赤","黄","紫"],a:0,e:"補色"}
+    ]
+  },
+  straight: {
+    name: "縮毛矯正",
+    questions: [
+      {q:"1剤の役割は？",c:["固定","結合切断","補修","色"],a:1,e:"還元"},
+      {q:"2剤の役割は？",c:["切る","固定","補修","色"],a:1,e:"酸化"}
+    ]
+  }
+};
 
-    let current = 0;
-    let score = 0;
-    let selected = null;
-    let answers = [];
-    let staffName = "";
-    let storeName = "";
-    let selectedGenre = "";
-    let selectedGenreName = "";
-    let questions = [];
+function showQuiz(){
+  login.classList.remove("hidden");
+}
 
-    function login() {
-      const idValue = document.getElementById("loginId").value.trim();
-      const passValue = document.getElementById("loginPass").value.trim();
-      const errorEl = document.getElementById("loginError");
+function showMyPage(){
+  mypage.classList.remove("hidden");
+}
 
-      if (idValue === VALID_ID && passValue === VALID_PASS) {
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("staffScreen").classList.remove("hidden");
-        errorEl.textContent = "";
-      } else {
-        errorEl.textContent = "IDまたはPASSが違います。";
-      }
+function login(){
+  if(id.value === VALID_ID && pass.value === VALID_PASS){
+    login.classList.add("hidden");
+    staff.classList.remove("hidden");
+  }
+}
+
+function start(){
+  staffName = name.value;
+  storeName = store.value;
+  let genre = genre.value;
+
+  questions = quizSets[genre].questions;
+  genreName = quizSets[genre].name;
+
+  staff.classList.add("hidden");
+  quiz.classList.remove("hidden");
+  nextBtn.classList.remove("hidden");
+
+  load();
+}
+
+function load(){
+  let q = questions[current];
+  quiz.innerHTML = `<p>${q.q}</p>`;
+  q.c.forEach((v,i)=>{
+    quiz.innerHTML += `<button onclick="select(${i})">${v}</button>`;
+  });
+}
+
+let selected;
+
+function select(i){
+  selected = i;
+}
+
+function next(){
+  if(selected === questions[current].a) score++;
+
+  current++;
+
+  if(current < questions.length){
+    load();
+  } else {
+    finish();
+  }
+}
+
+function finish(){
+  quiz.classList.add("hidden");
+  nextBtn.classList.add("hidden");
+  result.classList.remove("hidden");
+
+  let rate = Math.round(score / questions.length * 100);
+
+  result.innerHTML = `
+    <h3>${score}/${questions.length}</h3>
+    <p>${rate}%</p>
+  `;
+
+  save(rate);
+}
+
+async function save(rate){
+  await fetch(GAS_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain"},
+    body:JSON.stringify({
+      action:"save",
+      staffName,
+      storeName,
+      score,
+      total:questions.length,
+      rate,
+      testName:genreName
+    })
+  });
+}
+
+async function loadMyPage(){
+  let name = mypageName.value;
+
+  let res = await fetch(GAS_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain"},
+    body:JSON.stringify({
+      action:"getResults",
+      staffName:name
+    })
+  });
+
+  let data = await res.json();
+
+  let map = {};
+
+  data.forEach(r=>{
+    let genre = r[6];
+    let score = r[3];
+    let total = r[4];
+
+    let percent = Math.round(score/total*100);
+
+    if(!map[genre] || map[genre] < percent){
+      map[genre] = percent;
     }
+  });
 
-    function startQuiz() {
-      const nameValue = document.getElementById("staffNameInput").value.trim();
-      const storeValue = document.getElementById("storeInput").value;
-      const genreValue = document.getElementById("genreInput").value;
-      const errorEl = document.getElementById("staffError");
+  let html = "";
+  let clearCount = 0;
+  let totalGenres = Object.keys(quizSets).length;
 
-      if (!nameValue || !storeValue || !genreValue) {
-        errorEl.textContent = "名前・店舗・ジャンルを入力してください。";
-        return;
-      }
+  for(let g in quizSets){
+    let name = quizSets[g].name;
+    let score = map[name] || 0;
 
-      staffName = nameValue;
-      storeName = storeValue;
-      selectedGenre = genreValue;
-      selectedGenreName = quizSets[genreValue].name;
-      questions = quizSets[genreValue].questions;
-
-      current = 0;
-      score = 0;
-      selected = null;
-      answers = [];
-
-      document.getElementById("staffScreen").classList.add("hidden");
-      document.getElementById("quizScreen").classList.remove("hidden");
-      errorEl.textContent = "";
-      renderQuestion();
+    if(score === 100){
+      html += `<p class="pass">${name}：100点 合格</p>`;
+      clearCount++;
+    } else {
+      html += `<p class="fail">${name}：未達 (${score}%)</p>`;
     }
+  }
 
-    function renderQuestion() {
-      const q = questions[current];
-      selected = null;
+  let title = "Starter";
 
-      document.getElementById("progress").textContent = `${selectedGenreName} / Q${current + 1} / ${questions.length}`;
-      document.getElementById("questionText").textContent = q.q;
-      document.getElementById("quizError").textContent = "";
+  if(clearCount === totalGenres) title = "Master";
+  else if(clearCount >= 2) title = "Gold";
+  else if(clearCount >= 1) title = "Silver";
 
-      const choicesEl = document.getElementById("choices");
-      choicesEl.innerHTML = "";
+  mypageResult.innerHTML = `
+    <h3>${title}</h3>
+    ${html}
+  `;
+}
 
-      q.c.forEach((choiceText, index) => {
-        const btn = document.createElement("button");
-        btn.className = "choice";
-        btn.textContent = choiceText;
-        btn.onclick = () => selectChoice(index, btn);
-        choicesEl.appendChild(btn);
-      });
-    }
+</script>
 
-    function selectChoice(index, btn) {
-      selected = index;
-      document.querySelectorAll(".choice").forEach(el => el.classList.remove("selected"));
-      btn.classList.add("selected");
-    }
-
-    function nextQuestion() {
-      const errorEl = document.getElementById("quizError");
-
-      if (selected === null) {
-        errorEl.textContent = "回答を選んでください。";
-        return;
-      }
-
-      answers.push(selected);
-
-      if (selected === questions[current].a) {
-        score++;
-      }
-
-      current++;
-
-      if (current < questions.length) {
-        renderQuestion();
-      } else {
-        showResult();
-      }
-    }
-
-    function showResult() {
-      document.getElementById("quizScreen").classList.add("hidden");
-      document.getElementById("resultScreen").classList.remove("hidden");
-
-      const total = questions.length;
-      const rate = Math.round((score / total) * 100);
-
-      document.getElementById("resultName").textContent = staffName;
-      document.getElementById("resultStore").textContent = storeName;
-      document.getElementById("resultGenre").textContent = selectedGenreName;
-      document.getElementById("resultScore").textContent = `${score} / ${total}`;
-      document.getElementById("resultRate").textContent = `${rate}%`;
-
-      const reviewEl = document.getElementById("review");
-      reviewEl.innerHTML = "";
-
-      questions.forEach((q, i) => {
-        const userAnswer = answers[i];
-        const correct = userAnswer === q.a;
-
-        const box = document.createElement("div");
-        box.className = "review-box";
-        box.innerHTML = `
-          <p><strong>Q${i + 1}. ${q.q}</strong></p>
-          <p>あなたの回答：${q.c[userAnswer]}</p>
-          <p>正解：${q.c[q.a]}</p>
-          <p>${correct ? "○ 正解" : "× 不正解"}</p>
-          <p>解説：${q.e}</p>
-        `;
-        reviewEl.appendChild(box);
-      });
-
-      saveResult(rate);
-    }
-
-    async function saveResult(rate) {
-      const data = {
-        staffName: staffName,
-        storeName: storeName,
-        score: score,
-        total: questions.length,
-        rate: rate,
-        testName: selectedGenreName
-      };
-
-      try {
-        await fetch(GAS_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify(data)
-        });
-      } catch (e) {
-        console.error("送信エラー", e);
-      }
-    }
-  </script>
 </body>
 </html>
