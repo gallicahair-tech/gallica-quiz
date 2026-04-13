@@ -1,21 +1,60 @@
-/quiz-app
-  /public
-    logo.png
-  /src
-    /data
-      questions.json
-      staff.json
-    /components
-      Login.tsx
-      StaffSelect.tsx
-      QuizCard.tsx
-      ResultCard.tsx
-    /pages
-      index.tsx
-      quiz.tsx
-      result.tsx
-    /lib
-      auth.ts
-      grading.ts
-      api.ts
-  package.json
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Gallica Quiz</title>
+</head>
+<body>
+
+<h2>カラークイズ</h2>
+
+<div id="quiz"></div>
+<button onclick="next()">次へ</button>
+
+<h3 id="result"></h3>
+
+<script>
+const questions = [
+  {
+    q: "オキシ6%の役割は？",
+    choices: ["色味だけ", "明るくしながら発色", "ダメージ軽減", "色持ちUP"],
+    answer: 1
+  },
+  {
+    q: "赤みを消す補色は？",
+    choices: ["赤", "青", "黄", "紫"],
+    answer: 1
+  }
+];
+
+let current = 0;
+let score = 0;
+
+function load() {
+  let q = questions[current];
+  let html = "<p>" + q.q + "</p>";
+  q.choices.forEach((c,i)=>{
+    html += `<button onclick="answer(${i})">${c}</button>`;
+  });
+  document.getElementById("quiz").innerHTML = html;
+}
+
+function answer(i){
+  if(i === questions[current].answer) score++;
+}
+
+function next(){
+  current++;
+  if(current < questions.length){
+    load();
+  } else {
+    document.getElementById("quiz").innerHTML = "";
+    document.getElementById("result").innerText = "点数: " + score;
+  }
+}
+
+load();
+</script>
+
+</body>
+</html>
