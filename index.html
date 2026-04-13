@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gallica Quiz</title>
-
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -12,6 +11,7 @@
       margin: 0 auto;
       padding: 20px;
       background: #fafafa;
+      color: #111;
     }
 
     .card {
@@ -28,12 +28,19 @@
       margin-top: 10px;
       border-radius: 8px;
       font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input, select {
+      border: 1px solid #ccc;
+      background: #fff;
     }
 
     button {
       background: black;
       color: white;
       border: none;
+      cursor: pointer;
     }
 
     .choice {
@@ -43,166 +50,261 @@
       text-align: left;
     }
 
+    .choice.selected {
+      background: #e8eefc;
+      border-color: #9bb3ff;
+    }
+
     .hidden {
       display: none;
     }
+
+    .error {
+      color: #c62828;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .review-box {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px solid #eee;
+    }
   </style>
 </head>
-
 <body>
 
-<h2>Gallica Quiz</h2>
+  <h2>Gallica Quiz</h2>
 
-<!-- ログイン -->
-<div id="login" class="card">
-  <input id="id" placeholder="ID">
-  <input id="pass" type="password" placeholder="PASS">
-  <button onclick="login()">ログイン</button>
-</div>
+  <!-- ログイン -->
+  <div id="loginScreen" class="card">
+    <h3>ログイン</h3>
+    <input id="loginId" placeholder="ID">
+    <input id="loginPass" type="password" placeholder="PASS">
+    <button onclick="login()">ログイン</button>
+    <div id="loginError" class="error"></div>
+  </div>
 
-<!-- スタッフ -->
-<div id="staff" class="card hidden">
-  <input id="name" placeholder="名前">
-  <select id="store">
-    <option value="">店舗選択</option>
-    <option>表参道</option>
-    <option>青山</option>
-    <option>渋谷</option>
-  </select>
-  <button onclick="start()">スタート</button>
-</div>
+  <!-- スタッフ情報 -->
+  <div id="staffScreen" class="card hidden">
+    <h3>受験者情報</h3>
+    <input id="staffNameInput" placeholder="名前">
+    <select id="storeInput">
+      <option value="">店舗選択</option>
+      <option value="表参道">表参道</option>
+      <option value="青山">青山</option>
+      <option value="渋谷">渋谷</option>
+      <option value="蔵前">蔵前</option>
+      <option value="両国">両国</option>
+      <option value="錦糸町">錦糸町</option>
+      <option value="福岡">福岡</option>
+    </select>
+    <button onclick="startQuiz()">スタート</button>
+    <div id="staffError" class="error"></div>
+  </div>
 
-<!-- クイズ -->
-<div id="quiz" class="card hidden"></div>
-<button id="nextBtn" class="hidden" onclick="next()">次へ</button>
+  <!-- クイズ -->
+  <div id="quizScreen" class="card hidden">
+    <div id="progress"></div>
+    <h3 id="questionText"></h3>
+    <div id="choices"></div>
+    <button onclick="nextQuestion()">次へ</button>
+    <div id="quizError" class="error"></div>
+  </div>
 
-<!-- 結果 -->
-<div id="result" class="card hidden"></div>
+  <!-- 結果 -->
+  <div id="resultScreen" class="card hidden">
+    <h3>結果</h3>
+    <p><strong>名前：</strong><span id="resultName"></span></p>
+    <p><strong>店舗：</strong><span id="resultStore"></span></p>
+    <p><strong>点数：</strong><span id="resultScore"></span></p>
+    <p><strong>正答率：</strong><span id="resultRate"></span></p>
 
-<script>
+    <div id="review"></div>
 
-const VALID_ID = "gallicahair";
-const VALID_PASS = "2603";
+    <button onclick="location.reload()">もう一度受ける</button>
+  </div>
 
-const GAS_URL = https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec
+  <script>
+    const VALID_ID = "gallicahair";
+    const VALID_PASS = "2603";
 
-const questions = [
-  {
-    q: "オキシ6%の役割は？",
-    c: ["色味だけ", "明るく発色", "ダメージ軽減", "色持ちUP"],
-    a: 1,
-    e: "6%は明るくしながら発色"
-  },
-  {
-    q: "赤みを消す補色は？",
-    c: ["赤", "青", "黄", "紫"],
-    a: 1,
-    e: "青で赤みを打ち消す"
-  }
-];
+    const GAS_URL = https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec
 
-let current = 0;
-let score = 0;
-let selected = null;
-let answers = [];
-let staffName = "";
-let storeName = "";
+    const questions = [
+      {
+        q: "オキシ6%の主な役割は？",
+        c: ["色味だけを入れる", "明るくしながら発色させる", "ダメージを抑える", "色持ちを上げる"],
+        a: 1,
+        e: "6%はリフトしながら発色させる基本のオキシです。"
+      },
+      {
+        q: "赤みを消す補色は？",
+        c: ["赤", "青", "黄", "紫"],
+        a: 1,
+        e: "赤みを抑える時は青系を使ってコントロールします。"
+      },
+      {
+        q: "トーンダウン時に使いやすいオキシは？",
+        c: ["12%", "9%", "6%", "3%"],
+        a: 3,
+        e: "トーンダウンや色味補充では3%が基本です。"
+      },
+      {
+        q: "既染部に強いオキシを使うリスクは？",
+        c: ["ツヤが増す", "ムラとダメージが出やすい", "色持ちが良くなる", "退色しなくなる"],
+        a: 1,
+        e: "既染部に強い薬を重ねるとムラや負担につながります。"
+      }
+    ];
 
-function login() {
-  if(id.value === VALID_ID && pass.value === VALID_PASS){
-    loginDiv.style.display = "none";
-    staff.classList.remove("hidden");
-  }
-}
+    let current = 0;
+    let score = 0;
+    let selected = null;
+    let answers = [];
+    let staffName = "";
+    let storeName = "";
 
-function start(){
-  staffName = name.value;
-  storeName = store.value;
+    function login() {
+      const idValue = document.getElementById("loginId").value.trim();
+      const passValue = document.getElementById("loginPass").value.trim();
+      const errorEl = document.getElementById("loginError");
 
-  if(!staffName || !storeName){
-    alert("入力してください");
-    return;
-  }
+      if (idValue === VALID_ID && passValue === VALID_PASS) {
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("staffScreen").classList.remove("hidden");
+        errorEl.textContent = "";
+      } else {
+        errorEl.textContent = "IDまたはPASSが違います。";
+      }
+    }
 
-  staff.classList.add("hidden");
-  quiz.classList.remove("hidden");
-  nextBtn.classList.remove("hidden");
-  load();
-}
+    function startQuiz() {
+      const nameValue = document.getElementById("staffNameInput").value.trim();
+      const storeValue = document.getElementById("storeInput").value;
+      const errorEl = document.getElementById("staffError");
 
-function load(){
-  let q = questions[current];
-  quiz.innerHTML = `<p>${q.q}</p>`;
-  selected = null;
+      if (!nameValue || !storeValue) {
+        errorEl.textContent = "名前と店舗を入力してください。";
+        return;
+      }
 
-  q.c.forEach((v,i)=>{
-    quiz.innerHTML += `<button class="choice" onclick="select(${i})">${v}</button>`;
-  });
-}
+      staffName = nameValue;
+      storeName = storeValue;
 
-function select(i){
-  selected = i;
-}
+      document.getElementById("staffScreen").classList.add("hidden");
+      document.getElementById("quizScreen").classList.remove("hidden");
+      errorEl.textContent = "";
+      renderQuestion();
+    }
 
-function next(){
-  if(selected === null){
-    alert("選択してください");
-    return;
-  }
+    function renderQuestion() {
+      const q = questions[current];
+      selected = null;
 
-  answers.push(selected);
+      document.getElementById("progress").textContent = `Q${current + 1} / ${questions.length}`;
+      document.getElementById("questionText").textContent = q.q;
+      document.getElementById("quizError").textContent = "";
 
-  if(selected === questions[current].a){
-    score++;
-  }
+      const choicesEl = document.getElementById("choices");
+      choicesEl.innerHTML = "";
 
-  current++;
+      q.c.forEach((choiceText, index) => {
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.textContent = choiceText;
+        btn.onclick = () => selectChoice(index, btn);
+        choicesEl.appendChild(btn);
+      });
+    }
 
-  if(current < questions.length){
-    load();
-  } else {
-    finish();
-  }
-}
+    function selectChoice(index, btn) {
+      selected = index;
+      document.querySelectorAll(".choice").forEach(el => el.classList.remove("selected"));
+      btn.classList.add("selected");
+    }
 
-function finish(){
-  quiz.style.display = "none";
-  nextBtn.style.display = "none";
-  result.classList.remove("hidden");
+    function nextQuestion() {
+      const errorEl = document.getElementById("quizError");
 
-  let rate = Math.round(score / questions.length * 100);
+      if (selected === null) {
+        errorEl.textContent = "回答を選んでください。";
+        return;
+      }
 
-  result.innerHTML = `
-    <p>${staffName}（${storeName}）</p>
-    <h3>${score} / ${questions.length}</h3>
-    <p>${rate}%</p>
-  `;
+      answers.push(selected);
 
-  saveResult(rate);
-}
+      if (selected === questions[current].a) {
+        score++;
+      }
 
-async function saveResult(rate){
-  const data = {
-    staffName,
-    storeName,
-    score,
-    total: questions.length,
-    rate,
-    testName: "カラー基礎"
-  };
+      current++;
 
-  try {
-    await fetch(GAS_URL, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(data)
-    });
-  } catch(e){
-    console.error(e);
-  }
-}
+      if (current < questions.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
 
-</script>
+    function showResult() {
+      document.getElementById("quizScreen").classList.add("hidden");
+      document.getElementById("resultScreen").classList.remove("hidden");
 
+      const total = questions.length;
+      const rate = Math.round((score / total) * 100);
+
+      document.getElementById("resultName").textContent = staffName;
+      document.getElementById("resultStore").textContent = storeName;
+      document.getElementById("resultScore").textContent = `${score} / ${total}`;
+      document.getElementById("resultRate").textContent = `${rate}%`;
+
+      const reviewEl = document.getElementById("review");
+      reviewEl.innerHTML = "";
+
+      questions.forEach((q, i) => {
+        const userAnswer = answers[i];
+        const correct = userAnswer === q.a;
+
+        const box = document.createElement("div");
+        box.className = "review-box";
+        box.innerHTML = `
+          <p><strong>Q${i + 1}. ${q.q}</strong></p>
+          <p>あなたの回答：${q.c[userAnswer]}</p>
+          <p>正解：${q.c[q.a]}</p>
+          <p>${correct ? "○ 正解" : "× 不正解"}</p>
+          <p>解説：${q.e}</p>
+        `;
+        reviewEl.appendChild(box);
+      });
+
+      saveResult(rate);
+    }
+
+    async function saveResult(rate) {
+      const data = {
+        staffName: staffName,
+        storeName: storeName,
+        score: score,
+        total: questions.length,
+        rate: rate,
+        testName: "カラー基礎"
+      };
+
+      try {
+        await fetch(GAS_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+      } catch (e) {
+        console.error("送信エラー", e);
+      }
+    }
+  </script>
 </body>
 </html>
