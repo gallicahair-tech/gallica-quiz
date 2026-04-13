@@ -233,7 +233,7 @@
       if (currentQuestion < questions.length) {
         renderQuestion();
       } else {
-        showResult();
+        showResult();saveResult();
       }
     }
 
@@ -267,6 +267,30 @@
         review.appendChild(box);
       });
     }
-  </script>
+  </script>async function saveResult() {
+  const total = questions.length;
+  const rate = Math.round((score / total) * 100);
+
+  const payload = {
+    staffName: staffName,
+    storeName: storeName,
+    score: score,
+    total: total,
+    rate: rate,
+    testName: "カラー基礎"
+  };
+
+  try {
+    await fetch("ここにApps ScriptのURL貼る", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.error("送信エラー", e);
+  }
+}
 </body>
 </html>
