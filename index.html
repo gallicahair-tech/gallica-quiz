@@ -6,12 +6,13 @@
 <title>Gallica Quiz</title>
 
 <style>
-body { font-family: sans-serif; max-width: 500px; margin:auto; padding:20px;}
-.card { background:#fff; padding:16px; margin-top:16px; border:1px solid #ddd; border-radius:10px;}
-button { width:100%; padding:10px; margin-top:10px;}
-.hidden { display:none;}
-.pass { color:green;}
-.fail { color:red;}
+body { font-family: sans-serif; max-width: 500px; margin:auto; padding:20px; background:#f7f7f7; }
+.card { background:#fff; padding:16px; margin-top:16px; border:1px solid #ddd; border-radius:10px; }
+button, input, select { width:100%; padding:12px; margin-top:10px; box-sizing:border-box; }
+.hidden { display:none; }
+.pass { color:green; }
+.fail { color:red; }
+.choice { text-align:left; }
 </style>
 </head>
 
@@ -20,221 +21,281 @@ button { width:100%; padding:10px; margin-top:10px;}
 <h2>Gallica Quiz</h2>
 
 <div class="card">
-  <button onclick="showQuiz()">クイズを受ける</button>
-  <button onclick="showMyPage()">マイページ</button>
+  <button onclick="showQuizScreen()">クイズを受ける</button>
+  <button onclick="showMyPageScreen()">マイページ</button>
 </div>
 
 <!-- ログイン -->
-<div id="login" class="card hidden">
-  <input id="id" placeholder="ID">
-  <input id="pass" placeholder="PASS">
-  <button onclick="login()">ログイン</button>
+<div id="loginScreen" class="card hidden">
+  <input id="loginId" placeholder="ID">
+  <input id="loginPass" type="password" placeholder="PASS">
+  <button onclick="doLogin()">ログイン</button>
+  <div id="loginError" style="color:red;"></div>
 </div>
 
 <!-- スタッフ -->
-<div id="staff" class="card hidden">
-  <input id="name" placeholder="名前">
-  <select id="store">
-    <option>表参道</option>
-    <option>渋谷</option>
+<div id="staffScreen" class="card hidden">
+  <input id="staffNameInput" placeholder="名前">
+  <select id="storeInput">
+    <option value="">店舗を選択</option>
+    <option value="表参道">表参道</option>
+    <option value="渋谷">渋谷</option>
   </select>
 
-  <select id="genre">
+  <select id="genreInput">
+    <option value="">ジャンルを選択</option>
     <option value="color">カラー</option>
     <option value="straight">縮毛矯正</option>
   </select>
 
-  <button onclick="start()">スタート</button>
+  <button onclick="startQuiz()">スタート</button>
+  <div id="staffError" style="color:red;"></div>
 </div>
 
 <!-- クイズ -->
-<div id="quiz" class="card hidden"></div>
-<button id="nextBtn" class="hidden" onclick="next()">次へ</button>
+<div id="quizScreen" class="card hidden"></div>
+<button id="nextBtn" class="hidden" onclick="nextQuestion()">次へ</button>
 
 <!-- 結果 -->
-<div id="result" class="card hidden"></div>
+<div id="resultScreen" class="card hidden"></div>
 
 <!-- マイページ -->
-<div id="mypage" class="card hidden">
+<div id="mypageScreen" class="card hidden">
   <input id="mypageName" placeholder="名前">
   <button onclick="loadMyPage()">表示</button>
   <div id="mypageResult"></div>
 </div>
 
 <script>
-
-const GAS_URL = "ここにGAS URL";
-
+const GAS_URL = "ここにGAS URLを入れる";
 const VALID_ID = "gallicahair";
 const VALID_PASS = "2603";
-
-let questions = [];
-let score = 0;
-let current = 0;
-let staffName = "";
-let storeName = "";
-let genreName = "";
 
 const quizSets = {
   color: {
     name: "カラー",
     questions: [
-      {q:"オキシ6%の役割は？",c:["色だけ","明るく発色","補修","持ちUP"],a:1,e:"基本"},
-      {q:"赤み消す色は？",c:["青","赤","黄","紫"],a:0,e:"補色"}
+      { q: "オキシ6%の役割は？", c: ["色だけ", "明るく発色", "補修", "持ちUP"], a: 1, e: "基本" },
+      { q: "赤み消す色は？", c: ["青", "赤", "黄", "紫"], a: 0, e: "補色" }
     ]
   },
   straight: {
     name: "縮毛矯正",
     questions: [
-      {q:"1剤の役割は？",c:["固定","結合切断","補修","色"],a:1,e:"還元"},
-      {q:"2剤の役割は？",c:["切る","固定","補修","色"],a:1,e:"酸化"}
+      { q: "1剤の役割は？", c: ["固定", "結合切断", "補修", "色"], a: 1, e: "還元" },
+      { q: "2剤の役割は？", c: ["切る", "固定", "補修", "色"], a: 1, e: "酸化" }
     ]
   }
 };
 
-function showQuiz(){
-  login.classList.remove("hidden");
+let questions = [];
+let score = 0;
+let current = 0;
+let selected = null;
+let staffName = "";
+let storeName = "";
+let genreName = "";
+
+function hideAllScreens() {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("staffScreen").classList.add("hidden");
+  document.getElementById("quizScreen").classList.add("hidden");
+  document.getElementById("resultScreen").classList.add("hidden");
+  document.getElementById("mypageScreen").classList.add("hidden");
+  document.getElementById("nextBtn").classList.add("hidden");
 }
 
-function showMyPage(){
-  mypage.classList.remove("hidden");
+function showQuizScreen() {
+  hideAllScreens();
+  document.getElementById("loginScreen").classList.remove("hidden");
 }
 
-function login(){
-  if(id.value === VALID_ID && pass.value === VALID_PASS){
-    login.classList.add("hidden");
-    staff.classList.remove("hidden");
+function showMyPageScreen() {
+  hideAllScreens();
+  document.getElementById("mypageScreen").classList.remove("hidden");
+}
+
+function doLogin() {
+  const idValue = document.getElementById("loginId").value.trim();
+  const passValue = document.getElementById("loginPass").value.trim();
+  const errorEl = document.getElementById("loginError");
+
+  if (idValue === VALID_ID && passValue === VALID_PASS) {
+    hideAllScreens();
+    document.getElementById("staffScreen").classList.remove("hidden");
+    errorEl.textContent = "";
+  } else {
+    errorEl.textContent = "IDまたはPASSが違います。";
   }
 }
 
-function start(){
-  staffName = name.value;
-  storeName = store.value;
-  let genre = genre.value;
+function startQuiz() {
+  const nameValue = document.getElementById("staffNameInput").value.trim();
+  const storeValue = document.getElementById("storeInput").value;
+  const genreValue = document.getElementById("genreInput").value;
+  const errorEl = document.getElementById("staffError");
 
-  questions = quizSets[genre].questions;
-  genreName = quizSets[genre].name;
+  if (!nameValue || !storeValue || !genreValue) {
+    errorEl.textContent = "名前・店舗・ジャンルを入力してください。";
+    return;
+  }
 
-  staff.classList.add("hidden");
-  quiz.classList.remove("hidden");
-  nextBtn.classList.remove("hidden");
+  staffName = nameValue;
+  storeName = storeValue;
+  genreName = quizSets[genreValue].name;
+  questions = quizSets[genreValue].questions;
 
-  load();
+  score = 0;
+  current = 0;
+  selected = null;
+
+  hideAllScreens();
+  document.getElementById("quizScreen").classList.remove("hidden");
+  document.getElementById("nextBtn").classList.remove("hidden");
+
+  renderQuestion();
 }
 
-function load(){
-  let q = questions[current];
-  quiz.innerHTML = `<p>${q.q}</p>`;
-  q.c.forEach((v,i)=>{
-    quiz.innerHTML += `<button onclick="select(${i})">${v}</button>`;
+function renderQuestion() {
+  const q = questions[current];
+  selected = null;
+
+  const quizEl = document.getElementById("quizScreen");
+  quizEl.innerHTML = `<p>${genreName} ${current + 1} / ${questions.length}</p><h3>${q.q}</h3>`;
+
+  q.c.forEach((choice, i) => {
+    quizEl.innerHTML += `<button class="choice" onclick="selectChoice(${i})">${choice}</button>`;
   });
 }
 
-let selected;
-
-function select(i){
+function selectChoice(i) {
   selected = i;
 }
 
-function next(){
-  if(selected === questions[current].a) score++;
+function nextQuestion() {
+  if (selected === null) {
+    alert("回答を選んでください");
+    return;
+  }
+
+  if (selected === questions[current].a) score++;
 
   current++;
 
-  if(current < questions.length){
-    load();
+  if (current < questions.length) {
+    renderQuestion();
   } else {
-    finish();
+    finishQuiz();
   }
 }
 
-function finish(){
-  quiz.classList.add("hidden");
-  nextBtn.classList.add("hidden");
-  result.classList.remove("hidden");
+function finishQuiz() {
+  hideAllScreens();
+  document.getElementById("resultScreen").classList.remove("hidden");
 
-  let rate = Math.round(score / questions.length * 100);
+  const rate = Math.round(score / questions.length * 100);
+  const isPass = rate === 100 ? "合格" : "未達";
 
-  result.innerHTML = `
-    <h3>${score}/${questions.length}</h3>
+  document.getElementById("resultScreen").innerHTML = `
+    <h3>${genreName}</h3>
+    <p>${staffName} / ${storeName}</p>
+    <p>${score} / ${questions.length}</p>
     <p>${rate}%</p>
+    <p>${isPass}</p>
+    <button onclick="location.reload()">もう一度受ける</button>
   `;
 
-  save(rate);
+  saveResult(rate);
 }
 
-async function save(rate){
-  await fetch(GAS_URL,{
-    method:"POST",
-    headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({
-      action:"save",
-      staffName,
-      storeName,
-      score,
-      total:questions.length,
-      rate,
-      testName:genreName
-    })
-  });
+async function saveResult(rate) {
+  if (GAS_URL === "ここにGAS URLを入れる") return;
+
+  try {
+    await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "save",
+        staffName,
+        storeName,
+        score,
+        total: questions.length,
+        rate,
+        testName: genreName
+      })
+    });
+  } catch (e) {
+    console.error("保存エラー", e);
+  }
 }
 
-async function loadMyPage(){
-  let name = mypageName.value;
-
-  let res = await fetch(GAS_URL,{
-    method:"POST",
-    headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({
-      action:"getResults",
-      staffName:name
-    })
-  });
-
-  let data = await res.json();
-
-  let map = {};
-
-  data.forEach(r=>{
-    let genre = r[6];
-    let score = r[3];
-    let total = r[4];
-
-    let percent = Math.round(score/total*100);
-
-    if(!map[genre] || map[genre] < percent){
-      map[genre] = percent;
-    }
-  });
-
-  let html = "";
-  let clearCount = 0;
-  let totalGenres = Object.keys(quizSets).length;
-
-  for(let g in quizSets){
-    let name = quizSets[g].name;
-    let score = map[name] || 0;
-
-    if(score === 100){
-      html += `<p class="pass">${name}：100点 合格</p>`;
-      clearCount++;
-    } else {
-      html += `<p class="fail">${name}：未達 (${score}%)</p>`;
-    }
+async function loadMyPage() {
+  const targetName = document.getElementById("mypageName").value.trim();
+  if (!targetName) {
+    alert("名前を入力してください");
+    return;
   }
 
-  let title = "Starter";
+  if (GAS_URL === "ここにGAS URLを入れる") {
+    document.getElementById("mypageResult").innerHTML = "<p>GAS URLを設定してください。</p>";
+    return;
+  }
 
-  if(clearCount === totalGenres) title = "Master";
-  else if(clearCount >= 2) title = "Gold";
-  else if(clearCount >= 1) title = "Silver";
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "getResults",
+        staffName: targetName
+      })
+    });
 
-  mypageResult.innerHTML = `
-    <h3>${title}</h3>
-    ${html}
-  `;
+    const data = await res.json();
+    const bestScores = {};
+    const totalGenres = Object.keys(quizSets).length;
+    let clearCount = 0;
+
+    data.forEach(r => {
+      const testName = r[6];
+      const score = Number(r[3]);
+      const total = Number(r[4]);
+      const percent = Math.round(score / total * 100);
+
+      if (!bestScores[testName] || bestScores[testName] < percent) {
+        bestScores[testName] = percent;
+      }
+    });
+
+    let html = "";
+    for (const key in quizSets) {
+      const name = quizSets[key].name;
+      const percent = bestScores[name] || 0;
+
+      if (percent === 100) {
+        html += `<p class="pass">${name}：100点 合格</p>`;
+        clearCount++;
+      } else {
+        html += `<p class="fail">${name}：未達 (${percent}%)</p>`;
+      }
+    }
+
+    let title = "Starter";
+    if (clearCount === totalGenres) title = "Master";
+    else if (clearCount >= 2) title = "Gold";
+    else if (clearCount >= 1) title = "Silver";
+
+    document.getElementById("mypageResult").innerHTML = `
+      <h3>${targetName} さん</h3>
+      <h4>称号：${title}</h4>
+      ${html}
+    `;
+  } catch (e) {
+    console.error(e);
+    document.getElementById("mypageResult").innerHTML = "<p>読み込みに失敗しました。</p>";
+  }
 }
-
 </script>
 
 </body>
