@@ -85,7 +85,6 @@ button:hover { background: #ececec; }
   width: 100%;
   padding: 28px 22px;
   color: #fff;
-  backdrop-filter: blur(1px);
 }
 .hero-logo {
   width: 74px;
@@ -97,7 +96,7 @@ button:hover { background: #ececec; }
   padding: 6px;
 }
 .hero-title {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 34px;
   letter-spacing: 1px;
   font-weight: 700;
@@ -126,11 +125,15 @@ button:hover { background: #ececec; }
   border: none;
   font-weight: 600;
 }
-.hero-start:hover {
-  background: #fff;
+.genre-hero {
+  text-align: center;
+  padding: 36px 20px;
 }
-.pass { color: green; font-weight: bold; }
-.fail { color: #c62828; font-weight: bold; }
+.genre-hero h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  letter-spacing: 1px;
+}
 .answer-box {
   margin-top: 14px;
   padding: 12px;
@@ -142,23 +145,6 @@ button:hover { background: #ececec; }
   text-align: center;
   color: #666;
   margin-top: 10px;
-}
-.genre-hero {
-  text-align: center;
-  padding: 36px 20px;
-}
-.genre-hero h1 {
-  margin: 0 0 8px;
-  font-size: 30px;
-  letter-spacing: 1px;
-}
-.genre-hero p {
-  margin: 0;
-  color: #666;
-}
-.genre-hero .sub {
-  margin-top: 18px;
-  font-size: 14px;
 }
 </style>
 </head>
@@ -183,38 +169,25 @@ button:hover { background: #ececec; }
   <button onclick="openMyPageLogin()">マイページ</button>
 </div>
 
-<!-- クイズ用ログイン -->
 <div id="quizLoginScreen" class="card hidden">
   <h3>クイズ ログイン</h3>
-  <input id="quizLoginId" placeholder="ID">
+  <input id="quizLoginId" placeholder="スタッフID">
   <input id="quizLoginPass" type="password" placeholder="PASS">
   <button onclick="doQuizLogin()">ログイン</button>
   <div id="quizLoginError" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- マイページ用ログイン -->
 <div id="mypageLoginScreen" class="card hidden">
   <h3>マイページ ログイン</h3>
-  <input id="mypageLoginId" placeholder="ID">
+  <input id="mypageLoginId" placeholder="スタッフID">
   <input id="mypageLoginPass" type="password" placeholder="PASS">
   <button onclick="doMyPageLogin()">ログイン</button>
   <div id="mypageLoginError" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- 受験者情報 -->
 <div id="staffScreen" class="card hidden">
   <h3>受験者情報</h3>
-  <input id="staffNameInput" placeholder="名前">
-  <select id="storeInput">
-    <option value="">店舗を選択</option>
-    <option value="表参道">表参道</option>
-    <option value="青山">青山</option>
-    <option value="渋谷">渋谷</option>
-    <option value="蔵前">蔵前</option>
-    <option value="両国">両国</option>
-    <option value="錦糸町">錦糸町</option>
-    <option value="福岡">福岡</option>
-  </select>
+  <p id="staffInfoText"></p>
 
   <select id="genreInput">
     <option value="">ジャンルを選択</option>
@@ -227,34 +200,27 @@ button:hover { background: #ececec; }
   <div id="staffError" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- ジャンル表紙 -->
 <div id="genreCoverScreen" class="card genre-hero hidden">
   <h1 id="genreTitle">QUIZ</h1>
   <p id="genreSubtitle">knowledge check</p>
-  <p class="sub">準備ができたらスタートしてください</p>
+  <p class="small">準備ができたらスタートしてください</p>
   <button onclick="startQuiz()">スタート</button>
 </div>
 
-<!-- クイズ -->
 <div id="quizScreen" class="card hidden"></div>
 <div id="answerFeedback" class="card hidden"></div>
 <button id="nextBtn" class="hidden" onclick="nextQuestion()">次へ</button>
 
-<!-- 結果 -->
 <div id="resultScreen" class="card hidden"></div>
 
-<!-- マイページ -->
 <div id="mypageScreen" class="card hidden">
   <h3>マイページ</h3>
-  <input id="mypageName" placeholder="名前">
-  <button onclick="loadMyPage()">表示</button>
+  <p id="mypageInfoText"></p>
   <div id="mypageResult" style="margin-top:12px;"></div>
 </div>
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec";
-const VALID_ID = "gallicahair";
-const VALID_PASS = "2603";
 
 const genreMeta = {
   "チーム接客基礎": { short: "TEAM SERVICE QUIZ" },
@@ -273,10 +239,9 @@ let score = 0;
 let current = 0;
 let selected = null;
 let answers = [];
-let staffName = "";
-let storeName = "";
-let genreName = "";
 let answeredCurrent = false;
+
+let currentUser = null;
 
 function hideAllScreens() {
   document.getElementById("coverScreen").classList.add("hidden");
@@ -307,31 +272,76 @@ function openMyPageLogin() {
   document.getElementById("mypageLoginScreen").classList.remove("hidden");
 }
 
-function doQuizLogin() {
-  const idValue = document.getElementById("quizLoginId").value.trim();
-  const passValue = document.getElementById("quizLoginPass").value.trim();
+async function doQuizLogin() {
+  const staffId = document.getElementById("quizLoginId").value.trim();
+  const password = document.getElementById("quizLoginPass").value.trim();
   const errorEl = document.getElementById("quizLoginError");
 
-  if (idValue === VALID_ID && passValue === VALID_PASS) {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "login",
+        staffId,
+        password
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      errorEl.textContent = data.error || "ログインに失敗しました";
+      return;
+    }
+
+    currentUser = data.user;
+    document.getElementById("staffInfoText").textContent =
+      `${currentUser.staffName} / ${currentUser.storeName}`;
+
     hideAllScreens();
     document.getElementById("staffScreen").classList.remove("hidden");
     errorEl.textContent = "";
-  } else {
-    errorEl.textContent = "IDまたはPASSが違います。";
+  } catch (e) {
+    console.error(e);
+    errorEl.textContent = "ログインに失敗しました";
   }
 }
 
-function doMyPageLogin() {
-  const idValue = document.getElementById("mypageLoginId").value.trim();
-  const passValue = document.getElementById("mypageLoginPass").value.trim();
+async function doMyPageLogin() {
+  const staffId = document.getElementById("mypageLoginId").value.trim();
+  const password = document.getElementById("mypageLoginPass").value.trim();
   const errorEl = document.getElementById("mypageLoginError");
 
-  if (idValue === VALID_ID && passValue === VALID_PASS) {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "login",
+        staffId,
+        password
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      errorEl.textContent = data.error || "ログインに失敗しました";
+      return;
+    }
+
+    currentUser = data.user;
+    document.getElementById("mypageInfoText").textContent =
+      `${currentUser.staffName} / ${currentUser.storeName}`;
+
     hideAllScreens();
     document.getElementById("mypageScreen").classList.remove("hidden");
     errorEl.textContent = "";
-  } else {
-    errorEl.textContent = "IDまたはPASSが違います。";
+    loadMyPage();
+  } catch (e) {
+    console.error(e);
+    errorEl.textContent = "ログインに失敗しました";
   }
 }
 
@@ -365,22 +375,16 @@ function getTitle(scoreMap) {
 }
 
 function openGenreCover() {
-  const nameValue = document.getElementById("staffNameInput").value.trim();
-  const storeValue = document.getElementById("storeInput").value;
   const genreValue = document.getElementById("genreInput").value;
   const errorEl = document.getElementById("staffError");
 
-  if (!nameValue || !storeValue || !genreValue) {
-    errorEl.textContent = "名前・店舗・ジャンルを入力してください。";
+  if (!genreValue) {
+    errorEl.textContent = "ジャンルを入力してください。";
     return;
   }
 
-  staffName = nameValue;
-  storeName = storeValue;
-  genreName = genreValue;
-
-  document.getElementById("genreTitle").textContent = genreMeta[genreName]?.short || genreName;
-  document.getElementById("genreSubtitle").textContent = genreName;
+  document.getElementById("genreTitle").textContent = genreMeta[genreValue]?.short || genreValue;
+  document.getElementById("genreSubtitle").textContent = genreValue;
 
   hideAllScreens();
   document.getElementById("genreCoverScreen").classList.remove("hidden");
@@ -388,6 +392,8 @@ function openGenreCover() {
 }
 
 async function startQuiz() {
+  const genreName = document.getElementById("genreInput").value;
+
   hideAllScreens();
   document.getElementById("quizScreen").classList.remove("hidden");
   document.getElementById("quizScreen").innerHTML = '<div class="loading">問題を読み込み中...</div>';
@@ -422,14 +428,14 @@ async function startQuiz() {
     answers = [];
     answeredCurrent = false;
 
-    renderQuestion();
+    renderQuestion(genreName);
   } catch (e) {
     console.error(e);
     document.getElementById("quizScreen").innerHTML = "<p>問題の読み込みに失敗しました。</p>";
   }
 }
 
-function renderQuestion() {
+function renderQuestion(genreName) {
   const q = questions[current];
   selected = null;
   answeredCurrent = false;
@@ -483,15 +489,16 @@ function selectChoice(i) {
 
 function nextQuestion() {
   current++;
+  const genreName = document.getElementById("genreInput").value;
 
   if (current < questions.length) {
-    renderQuestion();
+    renderQuestion(genreName);
   } else {
-    finishQuiz();
+    finishQuiz(genreName);
   }
 }
 
-function finishQuiz() {
+function finishQuiz(genreName) {
   hideAllScreens();
   document.getElementById("resultScreen").classList.remove("hidden");
 
@@ -501,7 +508,7 @@ function finishQuiz() {
 
   document.getElementById("resultScreen").innerHTML = `
     <h3>${genreName}</h3>
-    <p>${staffName} / ${storeName}</p>
+    <p>${currentUser.staffName} / ${currentUser.storeName}</p>
     <p>${score} / ${questions.length}</p>
     <p>${rate}%</p>
     <div class="star">${stars || "☆"}</div>
@@ -509,18 +516,19 @@ function finishQuiz() {
     <button onclick="location.reload()">もう一度受ける</button>
   `;
 
-  saveResult(rate);
+  saveResult(rate, genreName);
 }
 
-async function saveResult(rate) {
+async function saveResult(rate, genreName) {
   try {
     await fetch(GAS_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         action: "save",
-        staffName,
-        storeName,
+        staffId: currentUser.staffId,
+        staffName: currentUser.staffName,
+        storeName: currentUser.storeName,
         score,
         total: questions.length,
         rate,
@@ -533,20 +541,13 @@ async function saveResult(rate) {
 }
 
 async function loadMyPage() {
-  const targetName = document.getElementById("mypageName").value.trim();
-
-  if (!targetName) {
-    alert("名前を入力してください");
-    return;
-  }
-
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         action: "getResults",
-        staffName: targetName
+        staffId: currentUser.staffId
       })
     });
 
@@ -555,9 +556,9 @@ async function loadMyPage() {
     const bestScores = {};
 
     data.forEach(r => {
-      const testName = r[6];
-      const score = Number(r[3]);
-      const total = Number(r[4]);
+      const testName = r[7];
+      const score = Number(r[4]);
+      const total = Number(r[5]);
       const percent = total > 0 ? Math.round(score / total * 100) : 0;
 
       if (!bestScores[testName] || bestScores[testName] < percent) {
@@ -584,7 +585,7 @@ async function loadMyPage() {
     const title = getTitle(bestScores);
 
     document.getElementById("mypageResult").innerHTML = `
-      <h3>${targetName} さん</h3>
+      <h3>${currentUser.staffName} さん</h3>
       <h4>称号：${title}</h4>
       ${html}
     `;
