@@ -66,21 +66,68 @@ button:hover { background: #ececec; }
 }
 .small { font-size: 14px; color: #666; }
 .hero {
-  text-align: center;
-  padding: 36px 20px;
+  overflow: hidden;
+  padding: 0;
 }
-.hero h1 {
-  margin: 0 0 8px;
+.hero-image {
+  position: relative;
+  min-height: 520px;
+  background-image:
+    linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.55)),
+    url("./assets/cover.jpg");
+  background-size: cover;
+  background-position: center;
+  border-radius: 14px;
+  display: flex;
+  align-items: flex-end;
+}
+.hero-content {
+  width: 100%;
+  padding: 28px 22px;
+  color: #fff;
+  backdrop-filter: blur(1px);
+}
+.hero-logo {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  margin-bottom: 18px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 999px;
+  padding: 6px;
+}
+.hero-title {
+  margin: 0;
   font-size: 34px;
   letter-spacing: 1px;
+  font-weight: 700;
 }
-.hero p {
-  margin: 0;
-  color: #666;
+.hero-brand {
+  margin-top: 8px;
+  font-size: 15px;
+  opacity: 0.92;
 }
-.hero .sub {
-  margin-top: 18px;
+.hero-copy {
+  margin-top: 20px;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.hero-subcopy {
+  margin-top: 8px;
   font-size: 14px;
+  line-height: 1.7;
+  opacity: 0.95;
+}
+.hero-start {
+  margin-top: 22px;
+  background: rgba(255,255,255,0.92);
+  color: #111;
+  border: none;
+  font-weight: 600;
+}
+.hero-start:hover {
+  background: #fff;
 }
 .pass { color: green; font-weight: bold; }
 .fail { color: #c62828; font-weight: bold; }
@@ -96,16 +143,39 @@ button:hover { background: #ececec; }
   color: #666;
   margin-top: 10px;
 }
+.genre-hero {
+  text-align: center;
+  padding: 36px 20px;
+}
+.genre-hero h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  letter-spacing: 1px;
+}
+.genre-hero p {
+  margin: 0;
+  color: #666;
+}
+.genre-hero .sub {
+  margin-top: 18px;
+  font-size: 14px;
+}
 </style>
 </head>
 
 <body>
 
 <div id="coverScreen" class="card hero">
-  <h1>STAFF QUIZ</h1>
-  <p>knowledge check</p>
-  <p class="sub">美容知識とチーム力を、楽しく積み上げるテスト</p>
-  <button onclick="showHome()">はじめる</button>
+  <div class="hero-image">
+    <div class="hero-content">
+      <img src="./assets/logo.png" alt="Gallica logo" class="hero-logo">
+      <h1 class="hero-title">STAFF QUIZ</h1>
+      <div class="hero-brand">hair salon Gallica</div>
+      <div class="hero-copy">美容師力を、楽しく積み上げるテスト</div>
+      <div class="hero-subcopy">全分野のマスタークラスを目指しましょう。</div>
+      <button class="hero-start" onclick="showHome()">はじめる</button>
+    </div>
+  </div>
 </div>
 
 <div id="homeScreen" class="card hidden">
@@ -148,9 +218,9 @@ button:hover { background: #ececec; }
 
   <select id="genreInput">
     <option value="">ジャンルを選択</option>
+    <option value="チーム接客基礎">チーム接客基礎</option>
     <option value="カラー基礎">カラー基礎</option>
     <option value="縮毛矯正基礎">縮毛矯正基礎</option>
-    <option value="チーム接客基礎">チーム接客基礎</option>
   </select>
 
   <button onclick="openGenreCover()">次へ</button>
@@ -158,7 +228,7 @@ button:hover { background: #ececec; }
 </div>
 
 <!-- ジャンル表紙 -->
-<div id="genreCoverScreen" class="card hero hidden">
+<div id="genreCoverScreen" class="card genre-hero hidden">
   <h1 id="genreTitle">QUIZ</h1>
   <p id="genreSubtitle">knowledge check</p>
   <p class="sub">準備ができたらスタートしてください</p>
@@ -187,10 +257,16 @@ const VALID_ID = "gallicahair";
 const VALID_PASS = "2603";
 
 const genreMeta = {
+  "チーム接客基礎": { short: "TEAM SERVICE QUIZ" },
   "カラー基礎": { short: "COLOR QUIZ" },
-  "縮毛矯正基礎": { short: "STRAIGHT QUIZ" },
-  "チーム接客基礎": { short: "TEAM SERVICE QUIZ" }
+  "縮毛矯正基礎": { short: "STRAIGHT QUIZ" }
 };
+
+const genreOrder = [
+  "チーム接客基礎",
+  "カラー基礎",
+  "縮毛矯正基礎"
+];
 
 let questions = [];
 let score = 0;
@@ -275,7 +351,7 @@ function getBadge(percent) {
 
 function getTitle(scoreMap) {
   const percents = Object.values(scoreMap);
-  const totalGenres = Object.keys(genreMeta).length;
+  const totalGenres = genreOrder.length;
   const hasAllMaster = percents.length === totalGenres && percents.every(v => v === 100);
   if (hasAllMaster) return "Master";
 
@@ -326,19 +402,19 @@ async function startQuiz() {
       })
     });
 
-const data = await res.json();
+    const data = await res.json();
 
-if (!data.ok) {
-  document.getElementById("quizScreen").innerHTML = `<p>読み込みエラー：${data.error || "不明なエラー"}</p>`;
-  return;
-}
+    if (!data.ok) {
+      document.getElementById("quizScreen").innerHTML = `<p>読み込みエラー：${data.error || "不明なエラー"}</p>`;
+      return;
+    }
 
-questions = data.questions || [];
+    questions = data.questions || [];
 
-if (!questions.length) {
-  document.getElementById("quizScreen").innerHTML = `<p>問題が0件です。genre=${data.genre || ""}</p>`;
-  return;
-}
+    if (!questions.length) {
+      document.getElementById("quizScreen").innerHTML = `<p>問題が0件です。genre=${data.genre || ""}</p>`;
+      return;
+    }
 
     score = 0;
     current = 0;
@@ -387,12 +463,8 @@ function selectChoice(i) {
     const btn = document.getElementById(`choice-${index}`);
     if (!btn) return;
 
-    if (index === q.a) {
-      btn.classList.add("correct");
-    }
-    if (index === selected && index !== q.a) {
-      btn.classList.add("wrong");
-    }
+    if (index === q.a) btn.classList.add("correct");
+    if (index === selected && index !== q.a) btn.classList.add("wrong");
     btn.disabled = true;
   });
 
@@ -494,7 +566,7 @@ async function loadMyPage() {
     });
 
     let html = "";
-    Object.keys(genreMeta).forEach(name => {
+    genreOrder.forEach(name => {
       const percent = bestScores[name] || 0;
       const stars = getStars(percent);
       const badge = getBadge(percent);
