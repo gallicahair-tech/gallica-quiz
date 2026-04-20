@@ -7,8 +7,8 @@
 
 <style>
 body {
-  font-family: sans-serif;
-  max-width: 520px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 560px;
   margin: auto;
   padding: 20px;
   background: #f7f7f7;
@@ -16,10 +16,10 @@ body {
 }
 .card {
   background: #fff;
-  padding: 16px;
+  padding: 18px;
   margin-top: 16px;
   border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 14px;
 }
 button, input, select {
   width: 100%;
@@ -27,36 +27,23 @@ button, input, select {
   margin-top: 10px;
   box-sizing: border-box;
   font-size: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 button {
   border: 1px solid #999;
   background: #f3f3f3;
   cursor: pointer;
 }
-button:hover {
-  background: #ececec;
+button:hover { background: #ececec; }
+.hidden { display: none; }
+.choice { text-align: left; }
+.choice.correct {
+  background: #e8f7e8;
+  border-color: #3ea55b;
 }
-.hidden {
-  display: none;
-}
-.choice {
-  text-align: left;
-}
-.choice.selected {
-  background: #dfe9ff;
-  border-color: #4d7cff;
-}
-.small {
-  font-size: 14px;
-  color: #666;
-}
-.review-box {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fafafa;
+.choice.wrong {
+  background: #fdeaea;
+  border-color: #d9534f;
 }
 .badge {
   display: inline-block;
@@ -70,22 +57,58 @@ button:hover {
   font-size: 24px;
   margin-top: 8px;
 }
-.pass {
-  color: green;
-  font-weight: bold;
+.review-box {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
 }
-.fail {
-  color: #c62828;
-  font-weight: bold;
+.small { font-size: 14px; color: #666; }
+.hero {
+  text-align: center;
+  padding: 36px 20px;
+}
+.hero h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  letter-spacing: 1px;
+}
+.hero p {
+  margin: 0;
+  color: #666;
+}
+.hero .sub {
+  margin-top: 18px;
+  font-size: 14px;
+}
+.pass { color: green; font-weight: bold; }
+.fail { color: #c62828; font-weight: bold; }
+.answer-box {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+}
+.loading {
+  text-align: center;
+  color: #666;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Gallica Quiz</h2>
+<div id="coverScreen" class="card hero">
+  <h1>STAFF QUIZ</h1>
+  <p>knowledge check</p>
+  <p class="sub">美容知識とチーム力を、楽しく積み上げるテスト</p>
+  <button onclick="showHome()">はじめる</button>
+</div>
 
-<div class="card">
+<div id="homeScreen" class="card hidden">
   <button onclick="openQuizLogin()">クイズを受ける</button>
   <button onclick="openMyPageLogin()">マイページ</button>
 </div>
@@ -108,7 +131,7 @@ button:hover {
   <div id="mypageLoginError" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- スタッフ情報 -->
+<!-- 受験者情報 -->
 <div id="staffScreen" class="card hidden">
   <h3>受験者情報</h3>
   <input id="staffNameInput" placeholder="名前">
@@ -125,17 +148,26 @@ button:hover {
 
   <select id="genreInput">
     <option value="">ジャンルを選択</option>
-    <option value="color">カラー基礎</option>
-    <option value="straight">縮毛矯正基礎</option>
-    <option value="team">チーム接客基礎</option>
+    <option value="カラー基礎">カラー基礎</option>
+    <option value="縮毛矯正基礎">縮毛矯正基礎</option>
+    <option value="チーム接客基礎">チーム接客基礎</option>
   </select>
 
-  <button onclick="startQuiz()">スタート</button>
+  <button onclick="openGenreCover()">次へ</button>
   <div id="staffError" style="color:red; margin-top:10px;"></div>
+</div>
+
+<!-- ジャンル表紙 -->
+<div id="genreCoverScreen" class="card hero hidden">
+  <h1 id="genreTitle">QUIZ</h1>
+  <p id="genreSubtitle">knowledge check</p>
+  <p class="sub">準備ができたらスタートしてください</p>
+  <button onclick="startQuiz()">スタート</button>
 </div>
 
 <!-- クイズ -->
 <div id="quizScreen" class="card hidden"></div>
+<div id="answerFeedback" class="card hidden"></div>
 <button id="nextBtn" class="hidden" onclick="nextQuestion()">次へ</button>
 
 <!-- 結果 -->
@@ -154,264 +186,10 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vud
 const VALID_ID = "gallicahair";
 const VALID_PASS = "2603";
 
-const quizSets = {
-  color: {
-    name: "カラー基礎",
-    questions: [
-      { q: "オキシ6%の主な役割は？", c: ["色味だけを入れる", "明るくしながら発色させる", "ダメージを抑える", "色持ちを上げる"], a: 1, e: "6%はリフトしながら発色させる基本のオキシです。" },
-      { q: "赤みを消す補色は？", c: ["赤", "青", "黄", "紫"], a: 1, e: "赤みを抑える時は青系を使ってコントロールします。" },
-      { q: "トーンダウン時に使いやすいオキシは？", c: ["12%", "9%", "6%", "3%"], a: 3, e: "トーンダウンや色味補充では3%が基本です。" },
-      { q: "既染部に強いオキシを使うリスクは？", c: ["ツヤが増す", "ムラとダメージが出やすい", "色持ちが良くなる", "退色しなくなる"], a: 1, e: "既染部に強い薬を重ねるとムラや負担につながります。" },
-      { q: "オキシ3%の主な用途は？", c: ["ハイトーンにする", "トーンダウンや色味補充", "ブリーチの代わり", "強いリフト"], a: 1, e: "3%はリフト力が弱く、色味を入れる時や暗くする時に向いています。" }
-    ]
-  },
-
-  straight: {
-    name: "縮毛矯正基礎",
-    questions: [
-      { q: "縮毛矯正の1剤の主な役割は？", c: ["固定する", "結合を切る", "ツヤを出す", "色を入れる"], a: 1, e: "1剤は還元によりシスチン結合を切断し、形を変えられる状態にします。" },
-      { q: "縮毛矯正の2剤の役割は？", c: ["結合を切る", "髪を乾かす", "結合を再結合させる", "色を入れる"], a: 2, e: "2剤は酸化により切った結合を再結合させ、形を固定します。" },
-      { q: "還元剤の働きとして正しいのは？", c: ["髪を硬くする", "結合を切る", "水分を補給する", "キューティクルを閉じる"], a: 1, e: "還元剤はシスチン結合を切ることで髪を柔らかくします。" },
-      { q: "アイロン操作の目的は？", c: ["色を入れる", "形を整える", "水分を増やす", "ダメージを減らす"], a: 1, e: "アイロンでストレート形状を作ります。" },
-      { q: "高温すぎるアイロンのリスクは？", c: ["ツヤが増える", "ダメージやビビリ毛", "色持ちが良くなる", "問題ない"], a: 1, e: "高温はタンパク変性を起こし、ビビリ毛の原因になります。" }
-    ]
-  },
-
-  team: {
-    name: "チーム接客基礎",
-    questions: [
-      {
-        q: "お客様が来店しました。",
-        c: ["いらっしゃいませ", "こんにちは"],
-        a: 1,
-        e: "どちらも間違いではありませんが、親しみやすいお店づくりや関係性を大切にしたいので、「こんにちは」と声をかけるようにしています。"
-      },
-      {
-        q: "お客様が来店しました。あなたが最初に気づきましたが、手が離せません。他のスタッフがしばらくしたら来られそうです。どうしますか？",
-        c: [
-          "「こんにちは！すぐご案内しますね。かけてお待ちください」と笑顔で伝える。",
-          "声をかけると自分が対応しなければいけない雰囲気になるので、他の人の対応を待つ。"
-        ],
-        a: 0,
-        e: "少しでも間が空くと、お客様は不安になります。気づいたらすぐに挨拶をして、安心感を与えましょう。お客様だけでなく、業者の方にも同じように対応しましょう。"
-      },
-      {
-        q: "電話が鳴っていますが、誰も手が空いていません。出る優先順位として正しいのはどれですか？",
-        c: [
-          "ドライの人、カラーを塗っている人、カットの1列の人、3人掛け持ちのカットの人",
-          "ドライの人、カットの1列の人、カラーを塗っている人、3人掛け持ちのカットの人",
-          "ドライの人、カットの1列の人、3人掛け持ちのカットの人、カラーを塗っている人",
-          "ドライの人、3人掛け持ちのカットの人、カットの1列の人、カラーを塗っている人"
-        ],
-        a: 2,
-        e: "まずはドライの人ができるだけ対応しましょう。カラー中の人は時間によって仕上がりにムラが出る可能性があるため、優先順位は低めです。また、カットの人は掛け持ちが少ない人の方が、お客様への影響が少ないので優先されます。 ただし、連続で電話が鳴る場合は、同じ人ばかりが出るのもよくないため、電話の長さやその場の状況を見て臨機応変に対応しましょう。"
-      },
-      {
-        q: "お客様がトイレに行く時に、自分とすれ違いそうです。あなたはどうしますか？",
-        c: [
-          "笑顔で声をかけ、「どうぞ」と伝える。",
-          "お客様が通りやすいように、自分の存在を消すように静かにする。"
-        ],
-        a: 0,
-        e: "お客様は人です。目が合ったら無視せず、普通に笑顔で気持ちよく声をかけましょう。"
-      },
-      {
-        q: "接客するお客様1名に対して、",
-        c: [
-          "できるだけ同じ人が入った方がいい。",
-          "できるだけいろいろなアシスタントが入った方がいい。"
-        ],
-        a: 0,
-        e: "最後まで同じ人が担当することで安心感を与え、「回されている」雰囲気を出しにくくなります。 また、色の説明や仕上げなども同じ人が行う方が親近感が湧きやすく、特別感やアシスタントへの愛着にもつながります。"
-      },
-      {
-        q: "お見送りは",
-        c: [
-          "一緒に担当したアシスタントも、空いていれば一緒にした方がいい。",
-          "一緒に担当したアシスタントは、空いていてもしない方がいい。"
-        ],
-        a: 0,
-        e: "会話をしたアシスタントも一緒にお見送りしてくれた方が、より丁寧な印象になります。 忙しい時は無理せずで大丈夫ですが、できる時は一緒に笑顔でお見送りしましょう。"
-      },
-      {
-        q: "ものを落としたり、大きな音を出した際は。",
-        c: [
-          "「失礼しました」と伝える。",
-          "何事もなかったように振る舞う。"
-        ],
-        a: 0,
-        e: "ものを落としたり、大きな音を出したら、「失礼しました」と伝えましょう。 また、言う時はただ業務的に言うのではなく、周りを見て、きちんと伝わるように声をかけることが大切です。 かなり大きい音が出た時は、音を出した本人だけでなく、お客様に施術しているスタッフも一言添えられると、より心配りが伝わります。"
-      },
-      {
-        q: "アシスタントにカラーの指示を出す時は？",
-        c: [
-          "お客様に聞こえないように伝える。",
-          "お客様に聞こえるように伝える。"
-        ],
-        a: 1,
-        e: "こそこそ話すと、お客様は不安になります。 きちんと伝達ができていることを見せることで、お客様に安心していただけます。 アシスタントスタイリストに関係なく、受け答えをきちんとしましょう。"
-      },
-      {
-        q: "自分の担当していないお客様の顔に薬が付いています。",
-        c: [
-          "お客様に声をかけて、担当者に伝える。",
-          "お客様に声をかけて、自分ですぐに拭く。"
-        ],
-        a: 1,
-        e: "顔に薬が付いていないか、不安そうにしていないかなど、常に周りのお客様にも気を配り、何かあればすぐに対応しましょう。 拭いたあとに必要があれば、担当者にも伝えましょう。"
-      },
-      {
-        q: "施術中に時間をチェックしたいです。",
-        c: [
-          "気づかれないように、さりげなく時間を見る。",
-          "お客様に一声かけて時計を見る。"
-        ],
-        a: 0,
-        e: "お客様が気づかないように、さりげなく時間を確認しましょう。 他のことに気が向いていることや、時間を気にしていることは、お客様に伝わります。 その人に集中している姿勢を見せることが大切です。時計を見る時は、できるだけ施術の手が止まるタイミングにしましょう。"
-      },
-      {
-        q: "お客様が10分遅れて来ました。",
-        c: [
-          "時間通りに帰せるようにする。",
-          "10分遅れなので、5分オーバーして帰す。"
-        ],
-        a: 0,
-        e: "他のお客様を待たせてしまう場合は、時間内で終えることを優先しましょう。 限られた時間の中で、最大限のクオリティを目指すことが大切です。 アシスタントでも、遅れているお客様を把握し、出来るだけ時間内に終わる様にサポートしましょう。"
-      },
-      {
-        q: "仕上がりを見てお客様が「色どうですか？」と聞いてきました。あなたは仕上がりに自信があります。どう返しますか？",
-        c: [
-          "「安心してください！綺麗な色が入っていますよ！」と褒めて盛り上げる。",
-          "「気になるところありますか？」と、不安がないか確認する。"
-        ],
-        a: 1,
-        e: "「色どうですかね？」と聞かれた時は、今の色に何か引っかかりがある可能性も考えます。 髪を何度も触る、何度も聞いてくるなどの様子がある時は、どこか気になる部分があるかもしれません。 お客様が仕上がりに不満を感じている場合は、お直しや、場合によっては料金をいただかない対応も必要です。 ただ、純粋に聞いているだけの方もいるので、その際はきちんと説明して、反応が良ければ問題ありません。 アシスタントの場合でも、どこか気になるか聞き、スタイリストに確認する様に伝えましょう。"
-      },
-      {
-        q: "お客様とスタイリストの会話は",
-        c: [
-          "プライベートな話をしているかもしれないので聞かない。",
-          "何か必要になるかもしれないので、できるだけ聞いておく。"
-        ],
-        a: 1,
-        e: "スムーズに会話に入れるように、会話は聞いておきましょう。 一体感が出て、お客様にも余計な気を使わせにくくなります。 また、カウンセリング内容を聞いておけば、その日のお客様の流れも理解しやすくなります。"
-      },
-      {
-        q: "お客様が、今流行りの映画が全然面白くなかったと話しています。あなたはその映画を見て、面白かったと思っています。",
-        c: [
-          "お客様に共感し、一緒に映画を批判する。",
-          "一部共感しつつ、「なるほど、そうなんですね！」と聞く側にまわる。",
-          "共感しすぎず、自分が面白いと思った部分を伝えて議論する。"
-        ],
-        a: 1,
-        e: "目の前のお客様だけでなく、周りのお客様が不快になる可能性のある批判は、できるだけ避けましょう。 また、共感せずに自分の意見を強く出すと、「この人とは合わない」と思われるリスクがあります。 お客様が話してきた時は、「そうなんですね！」と受け止めながら、周りへの配慮やネタバレにも注意しましょう。"
-      },
-      {
-        q: "「私、髪硬くて」とネガティブな感じでお客様が言っています。",
-        c: [
-          "「そんなに硬くないですよ、ちょうどいいですよ！」と励ます。",
-          "「確かに柔らかさは出にくいですね。でも、ツヤが出やすい良い髪ですよ」と良い部分も伝える。",
-          "「髪硬いですね。本当に大変ですよね」と気持ちに寄り添う。"
-        ],
-        a: 1,
-        e: "髪質にはマイナス面もあれば、プラス面もあります。 マイナス面に共感することも大切ですが、それだけで終わらせず、良い部分もプロとして見つけて伝えてあげましょう。 励ますだけだと、「この人はわかってくれていない」と思われることもあるので注意です。"
-      },
-      {
-        q: "スタイリストまたはアシスタントが、お客様のお肌が綺麗だと褒めています。",
-        c: [
-          "一緒に褒める。",
-          "自分も褒めると嘘っぽいので、静かにほほえむ。"
-        ],
-        a: 0,
-        e: "褒めて肯定しましょう。 違う人にも褒められると、お客様はより嬉しく、自信にもつながります。 「確かに！綺麗にするコツはあるんですか？」など、自然に褒めながら会話を広げられるとさらに良いです。"
-      },
-      {
-        q: "カラーで赤みが出やすいと、お客様が言っています。",
-        c: [
-          "日本人は赤いメラニンが多いことを説明し、赤みを抑えるカラーを提案する。",
-          "お客様の髪質を説明し、赤みを抑えるカラーを提案する。"
-        ],
-        a: 1,
-        e: "「日本人の髪は〜」という一般論ではなく、「〇〇さんの髪は〜だから」という伝え方をしましょう。 お客様が知りたいのは、自分の髪のことです。 美容師にとっては当たり前のことでも、お客様にとっては自分だけの悩みとして受け取っています。"
-      },
-      {
-        q: "お客様の名前は、会話やカウンセリング中に",
-        c: [
-          "できるだけ言う。",
-          "間違えると最悪なので、最初だけ言う様にする。"
-        ],
-        a: 0,
-        e: "間違えないように意識したうえで、3回は呼びましょう。 最初・途中で1回・お見送りの合計3回は意識したいです。 目の前のお客様は世界に一人です。自分の名前を覚えて呼んでもらえることは、とても嬉しいことです。 不自然にならない範囲で、しっかりお名前を呼びましょう。"
-      },
-      {
-        q: "今回のカラーは、シンプルなアッシュ系単品カラーです。",
-        c: [
-          "シンプルな施術の時は、技術のこだわりより楽しい会話をして、こだわりが少ないと感じさせないようにする。",
-          "「シンプルなカラーだからこそ、透明感が出る」などのこだわりを少しでも毎回伝える。"
-        ],
-        a: 1,
-        e: "技術・デザイン・似合わせなど、プロとしての話ができるようにしましょう。 そのうえで楽しい会話もできれば、信頼もつながりも生まれます。"
-      },
-      {
-        q: "スタッフ間でやり取りをする際、",
-        c: [
-          "無言のやり取りでプロっぽさを出す。",
-          "「ありがとうございます」「お願いします」など、声をかけながらやり取りする。"
-        ],
-        a: 1,
-        e: "カラーをお願いする時などは、「〇〇でお願いします！」、「〇〇しました！」→「ありがとうございます！」など、スタッフ間の声かけを大切にしましょう。 声かけがある方が、連携がしっかり取れているように見えます。 無言だと、マイナスな緊張感が伝わることもあります。 どうせなら、「ありがとう」が多い気持ちの良い空気を作りましょう。"
-      },
-      {
-        q: "アシスタントとして施術をする際は？",
-        c: [
-          "スタイリストのように自信を持ち、説明できることは説明しながら、技術にも集中する。",
-          "間違った説明をしないように、技術だけに集中する。"
-        ],
-        a: 0,
-        e: "アシスタントではなく、プロとして引き継ぐ意識を持って仕事をしましょう。 薬剤や施術については、できるだけわからない部分をなくし、わからないことがあれば「スタイリストに確認しますね！」と、お客様に不安を与えない伝え方をすることが大切です。 少しずつ、説明できることを増やしていきましょう。 また、スタイリストも、アシスタントに任せる際に伝えてほしいことや、こだわりを話すようにしましょう。"
-      },
-      {
-        q: "伝達をする時、または受ける時は",
-        c: [
-          "お客様から見られていることを意識し、理解している様子やプロらしい受け答えを見せる。",
-          "お客様から見られないように、できるだけ視界に入らない位置で聞く。"
-        ],
-        a: 0,
-        e: "お客様は常に見ています。 だからこそ、その場の伝達もプロとして信頼される受け答えや立ち振る舞いを意識しましょう。 そのやり取り自体を「すごい・プロっぽい」と感じていただけることもあります。"
-      },
-      {
-        q: "カルテの活用の仕方で、正しくないものはどれですか？",
-        c: [
-          "仕上がりのビフォーアフターを送る。",
-          "一緒にご飯に行きたそうだったので、連絡をする。",
-          "旅行の話をしたので、その内容をアシスタントがカルテに書く。",
-          "前回来店からそろそろ来店周期なので、リマインドLINEをする。"
-        ],
-        a: 1,
-        e: "カルテに会話内容を記入しておくことで、次回の会話につながり、お客様にも「覚えてくれている」と感じていただけます。 アシスタントも記入することで、チーム全体でお店を好きになってもらいやすくなります。 当日にビフォーアフターを送ったり、次回来店のLINEを送るのも、予約につながる有効な方法です。 個人的な連絡や仕事に関係ない連絡はクレームにつながるので、絶対にやめましょう。"
-      },
-      {
-        q: "掃除について、正しくないものはどれですか？",
-        c: [
-          "掃除はアシスタントがして、スタイリストはお客様に集中する。",
-          "掃除の5Sとは、整理・整頓・清掃・清潔・躾である。",
-          "汚れた服は着ないようにする。",
-          "掃除項目以外の部分も、気づいたら掃除し、必要があれば項目に付け足す。"
-        ],
-        a: 0,
-        e: "お客様が心地よく過ごせるように、全員で積極的に掃除しましょう。 不要なものをなくし、使いやすく整頓し、汚れないようにし、綺麗な状態を維持することが大切です。 汚れた服を着ないことも含め、自分たちがお手本になる意識を持ち、お客様に見えないところまで綺麗にしましょう。"
-      },
-      {
-        q: "美容師さんはたくさん練習したり、大変な仕事ですよね、とお客様が言ってくれています。",
-        c: [
-          "どれだけ大変かを話し、乗り越えた自分がすごいことを伝える。",
-          "練習や仕事の楽しさを伝える。"
-        ],
-        a: 1,
-        e: "「遅くまで練習して大変ですね」と言われたら、「遅くまで練習しましたけど、自分が上手くなっていくので、その時間も面白いですよ」など、美容師が好きだという気持ちを伝えましょう。 たとえそこまで夜練習していないとしても、わざわざ否定しなくて大丈夫です。 お客様は、仕事を楽しんでいない人より、目の前の人を喜ばせることや成長することを楽しんでいる人に髪を任せたいと思うはずです。 その前向きさや楽しさを伝えましょう。もちろん大変なこともありますが、それも乗り越えて、振り返った時によかったと思える美容師を目指しましょう。"
-      }
-    ]
-  }
+const genreMeta = {
+  "カラー基礎": { short: "COLOR QUIZ" },
+  "縮毛矯正基礎": { short: "STRAIGHT QUIZ" },
+  "チーム接客基礎": { short: "TEAM SERVICE QUIZ" }
 };
 
 let questions = [];
@@ -422,15 +200,25 @@ let answers = [];
 let staffName = "";
 let storeName = "";
 let genreName = "";
+let answeredCurrent = false;
 
 function hideAllScreens() {
+  document.getElementById("coverScreen").classList.add("hidden");
+  document.getElementById("homeScreen").classList.add("hidden");
   document.getElementById("quizLoginScreen").classList.add("hidden");
   document.getElementById("mypageLoginScreen").classList.add("hidden");
   document.getElementById("staffScreen").classList.add("hidden");
+  document.getElementById("genreCoverScreen").classList.add("hidden");
   document.getElementById("quizScreen").classList.add("hidden");
+  document.getElementById("answerFeedback").classList.add("hidden");
   document.getElementById("resultScreen").classList.add("hidden");
   document.getElementById("mypageScreen").classList.add("hidden");
   document.getElementById("nextBtn").classList.add("hidden");
+}
+
+function showHome() {
+  hideAllScreens();
+  document.getElementById("homeScreen").classList.remove("hidden");
 }
 
 function openQuizLogin() {
@@ -487,7 +275,7 @@ function getBadge(percent) {
 
 function getTitle(scoreMap) {
   const percents = Object.values(scoreMap);
-  const totalGenres = Object.keys(quizSets).length;
+  const totalGenres = Object.keys(genreMeta).length;
   const hasAllMaster = percents.length === totalGenres && percents.every(v => v === 100);
   if (hasAllMaster) return "Master";
 
@@ -500,7 +288,7 @@ function getTitle(scoreMap) {
   return "Beginner";
 }
 
-function startQuiz() {
+function openGenreCover() {
   const nameValue = document.getElementById("staffNameInput").value.trim();
   const storeValue = document.getElementById("storeInput").value;
   const genreValue = document.getElementById("genreInput").value;
@@ -513,24 +301,59 @@ function startQuiz() {
 
   staffName = nameValue;
   storeName = storeValue;
-  genreName = quizSets[genreValue].name;
-  questions = quizSets[genreValue].questions;
+  genreName = genreValue;
 
-  score = 0;
-  current = 0;
-  selected = null;
-  answers = [];
+  document.getElementById("genreTitle").textContent = genreMeta[genreName]?.short || genreName;
+  document.getElementById("genreSubtitle").textContent = genreName;
 
   hideAllScreens();
-  document.getElementById("quizScreen").classList.remove("hidden");
-  document.getElementById("nextBtn").classList.remove("hidden");
+  document.getElementById("genreCoverScreen").classList.remove("hidden");
+  errorEl.textContent = "";
+}
 
-  renderQuestion();
+async function startQuiz() {
+  hideAllScreens();
+  document.getElementById("quizScreen").classList.remove("hidden");
+  document.getElementById("quizScreen").innerHTML = '<div class="loading">問題を読み込み中...</div>';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "getQuestions",
+        genre: genreName
+      })
+    });
+
+    const data = await res.json();
+    questions = data.questions || [];
+
+    if (!questions.length) {
+      document.getElementById("quizScreen").innerHTML = "<p>このジャンルの問題がまだ登録されていません。</p>";
+      return;
+    }
+
+    score = 0;
+    current = 0;
+    selected = null;
+    answers = [];
+    answeredCurrent = false;
+
+    renderQuestion();
+  } catch (e) {
+    console.error(e);
+    document.getElementById("quizScreen").innerHTML = "<p>問題の読み込みに失敗しました。</p>";
+  }
 }
 
 function renderQuestion() {
   const q = questions[current];
   selected = null;
+  answeredCurrent = false;
+
+  document.getElementById("answerFeedback").classList.add("hidden");
+  document.getElementById("nextBtn").classList.add("hidden");
 
   const quizEl = document.getElementById("quizScreen");
   quizEl.innerHTML = `
@@ -544,27 +367,43 @@ function renderQuestion() {
 }
 
 function selectChoice(i) {
+  if (answeredCurrent) return;
+
   selected = i;
-  questions[current].c.forEach((_, index) => {
+  answeredCurrent = true;
+  answers.push(selected);
+
+  const q = questions[current];
+  const isCorrect = selected === q.a;
+  if (isCorrect) score++;
+
+  q.c.forEach((_, index) => {
     const btn = document.getElementById(`choice-${index}`);
-    if (btn) btn.classList.remove("selected");
+    if (!btn) return;
+
+    if (index === q.a) {
+      btn.classList.add("correct");
+    }
+    if (index === selected && index !== q.a) {
+      btn.classList.add("wrong");
+    }
+    btn.disabled = true;
   });
-  const selectedBtn = document.getElementById(`choice-${i}`);
-  if (selectedBtn) selectedBtn.classList.add("selected");
+
+  const feedbackEl = document.getElementById("answerFeedback");
+  feedbackEl.classList.remove("hidden");
+  feedbackEl.innerHTML = `
+    <div class="answer-box">
+      <p><strong>${isCorrect ? "○ 正解" : "× 不正解"}</strong></p>
+      <p>正解：${q.c[q.a]}</p>
+      <p>解説：${q.e}</p>
+    </div>
+  `;
+
+  document.getElementById("nextBtn").classList.remove("hidden");
 }
 
 function nextQuestion() {
-  if (selected === null) {
-    alert("回答を選んでください");
-    return;
-  }
-
-  answers.push(selected);
-
-  if (selected === questions[current].a) {
-    score++;
-  }
-
   current++;
 
   if (current < questions.length) {
@@ -582,21 +421,6 @@ function finishQuiz() {
   const stars = getStars(rate);
   const badge = getBadge(rate);
 
-  let reviewHtml = "";
-  questions.forEach((q, i) => {
-    const userAnswer = answers[i];
-    const correct = userAnswer === q.a;
-    reviewHtml += `
-      <div class="review-box">
-        <p><strong>Q${i + 1}. ${q.q}</strong></p>
-        <p>あなたの回答：${q.c[userAnswer]}</p>
-        <p>正解：${q.c[q.a]}</p>
-        <p>${correct ? "○ 正解" : "× 不正解"}</p>
-        <p>解説：${q.e}</p>
-      </div>
-    `;
-  });
-
   document.getElementById("resultScreen").innerHTML = `
     <h3>${genreName}</h3>
     <p>${staffName} / ${storeName}</p>
@@ -604,7 +428,6 @@ function finishQuiz() {
     <p>${rate}%</p>
     <div class="star">${stars || "☆"}</div>
     <div class="badge">${badge}</div>
-    ${reviewHtml}
     <button onclick="location.reload()">もう一度受ける</button>
   `;
 
@@ -612,8 +435,6 @@ function finishQuiz() {
 }
 
 async function saveResult(rate) {
-  if (!GAS_URL) return;
-
   try {
     await fetch(GAS_URL, {
       method: "POST",
@@ -653,7 +474,6 @@ async function loadMyPage() {
 
     const responseData = await res.json();
     const data = responseData.results || [];
-
     const bestScores = {};
 
     data.forEach(r => {
@@ -668,8 +488,7 @@ async function loadMyPage() {
     });
 
     let html = "";
-    for (const key in quizSets) {
-      const name = quizSets[key].name;
+    Object.keys(genreMeta).forEach(name => {
       const percent = bestScores[name] || 0;
       const stars = getStars(percent);
       const badge = getBadge(percent);
@@ -682,7 +501,7 @@ async function loadMyPage() {
           <div class="badge">${badge}</div>
         </div>
       `;
-    }
+    });
 
     const title = getTitle(bestScores);
 
