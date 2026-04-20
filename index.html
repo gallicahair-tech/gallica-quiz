@@ -326,13 +326,19 @@ async function startQuiz() {
       })
     });
 
-    const data = await res.json();
-    questions = data.questions || [];
+const data = await res.json();
 
-    if (!questions.length) {
-      document.getElementById("quizScreen").innerHTML = "<p>このジャンルの問題がまだ登録されていません。</p>";
-      return;
-    }
+if (!data.ok) {
+  document.getElementById("quizScreen").innerHTML = `<p>読み込みエラー：${data.error || "不明なエラー"}</p>`;
+  return;
+}
+
+questions = data.questions || [];
+
+if (!questions.length) {
+  document.getElementById("quizScreen").innerHTML = `<p>問題が0件です。genre=${data.genre || ""}</p>`;
+  return;
+}
 
     score = 0;
     current = 0;
