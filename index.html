@@ -153,23 +153,14 @@ button:hover { background: #ececec; }
   background: #f8f8f8;
   border: 1px solid #ddd;
 }
-.rank-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
-}
-.rank-item:last-child {
-  border-bottom: none;
-}
 .rank-title {
   font-weight: 700;
   margin-top: 6px;
 }
-.pass { color: green; font-weight: bold; }
-.fail { color: #c62828; font-weight: bold; }
-.top3 {
+.section-title {
+  margin-top: 22px;
+  margin-bottom: 8px;
+  font-size: 18px;
   font-weight: 700;
 }
 </style>
@@ -193,7 +184,6 @@ button:hover { background: #ececec; }
 <div id="homeScreen" class="card hidden">
   <button onclick="openQuizLogin()">クイズを受ける</button>
   <button onclick="openMyPageLogin()">マイページ</button>
-  <button onclick="openStoreBattleScreen()">店舗対抗バトル</button>
 </div>
 
 <div id="quizLoginScreen" class="card hidden">
@@ -218,9 +208,23 @@ button:hover { background: #ececec; }
 
   <select id="genreInput">
     <option value="">ジャンルを選択</option>
+
     <option value="チーム接客基礎">チーム接客基礎</option>
+
     <option value="カラー基礎">カラー基礎</option>
+    <option value="カラー初級">カラー初級</option>
+    <option value="カラー中級">カラー中級</option>
+    <option value="カラー上級">カラー上級</option>
+
     <option value="縮毛矯正基礎">縮毛矯正基礎</option>
+    <option value="縮毛矯正初級">縮毛矯正初級</option>
+    <option value="縮毛矯正中級">縮毛矯正中級</option>
+    <option value="縮毛矯正上級">縮毛矯正上級</option>
+
+    <option value="カウンセリング基礎">カウンセリング基礎</option>
+    <option value="カウンセリング初級">カウンセリング初級</option>
+    <option value="カウンセリング中級">カウンセリング中級</option>
+    <option value="カウンセリング上級">カウンセリング上級</option>
   </select>
 
   <button onclick="openGenreCover()">次へ</button>
@@ -246,24 +250,45 @@ button:hover { background: #ececec; }
   <div id="mypageResult" style="margin-top:12px;"></div>
 </div>
 
-<div id="storeBattleScreen" class="card hidden">
-  <h3>店舗対抗バトル</h3>
-  <div id="storeBattleResult" style="margin-top:12px;"></div>
-</div>
-
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec";
 
 const genreMeta = {
   "チーム接客基礎": { short: "TEAM SERVICE QUIZ" },
-  "カラー基礎": { short: "COLOR QUIZ" },
-  "縮毛矯正基礎": { short: "STRAIGHT QUIZ" }
+
+  "カラー基礎": { short: "COLOR BASIC QUIZ" },
+  "カラー初級": { short: "COLOR BEGINNER QUIZ" },
+  "カラー中級": { short: "COLOR INTERMEDIATE QUIZ" },
+  "カラー上級": { short: "COLOR ADVANCED QUIZ" },
+
+  "縮毛矯正基礎": { short: "STRAIGHT BASIC QUIZ" },
+  "縮毛矯正初級": { short: "STRAIGHT BEGINNER QUIZ" },
+  "縮毛矯正中級": { short: "STRAIGHT INTERMEDIATE QUIZ" },
+  "縮毛矯正上級": { short: "STRAIGHT ADVANCED QUIZ" },
+
+  "カウンセリング基礎": { short: "COUNSELING BASIC QUIZ" },
+  "カウンセリング初級": { short: "COUNSELING BEGINNER QUIZ" },
+  "カウンセリング中級": { short: "COUNSELING INTERMEDIATE QUIZ" },
+  "カウンセリング上級": { short: "COUNSELING ADVANCED QUIZ" }
 };
 
 const genreOrder = [
   "チーム接客基礎",
+
   "カラー基礎",
-  "縮毛矯正基礎"
+  "カラー初級",
+  "カラー中級",
+  "カラー上級",
+
+  "縮毛矯正基礎",
+  "縮毛矯正初級",
+  "縮毛矯正中級",
+  "縮毛矯正上級",
+
+  "カウンセリング基礎",
+  "カウンセリング初級",
+  "カウンセリング中級",
+  "カウンセリング上級"
 ];
 
 let questions = [];
@@ -286,7 +311,6 @@ function hideAllScreens() {
   document.getElementById("answerFeedback").classList.add("hidden");
   document.getElementById("resultScreen").classList.add("hidden");
   document.getElementById("mypageScreen").classList.add("hidden");
-  document.getElementById("storeBattleScreen").classList.add("hidden");
   document.getElementById("nextBtn").classList.add("hidden");
 }
 
@@ -303,13 +327,6 @@ function openQuizLogin() {
 function openMyPageLogin() {
   hideAllScreens();
   document.getElementById("mypageLoginScreen").classList.remove("hidden");
-}
-
-async function openStoreBattleScreen() {
-  hideAllScreens();
-  document.getElementById("storeBattleScreen").classList.remove("hidden");
-  document.getElementById("storeBattleResult").innerHTML = '<div class="loading">ランキングを読み込み中...</div>';
-  await loadStoreBattle();
 }
 
 async function doQuizLogin() {
@@ -388,28 +405,28 @@ async function doMyPageLogin() {
 function getStars(percent) {
   if (percent === 100) return "⭐⭐⭐";
   if (percent >= 80) return "⭐⭐";
-  if (percent >= 60) return "⭐";
+  if (percent > 0) return "⭐️";
   return "";
 }
 
-function getBadge(percent) {
+function getBadge(percent, isTaken) {
+  if (!isTaken) return "未受験";
   if (percent === 100) return "👑 マスター";
-  if (percent >= 80) return "🎖 エキスパート";
-  if (percent >= 60) return "🏅 チャレンジャー";
-  return "なし";
+  if (percent >= 80) return "達成中";
+  return "80%未達";
 }
 
 function getTitle(scoreMap) {
-  const percents = Object.values(scoreMap);
+  const percents = genreOrder.map(name => scoreMap[name] || 0);
   const totalGenres = genreOrder.length;
-  const hasAllMaster = percents.length === totalGenres && percents.every(v => v === 100);
+  const hasAllMaster = percents.every(v => v === 100);
   if (hasAllMaster) return "Master";
 
   const highCount = percents.filter(v => v >= 80).length;
-  const starCount = percents.filter(v => v >= 60).length;
+  const starCount = percents.filter(v => v > 0).length;
 
-  if (highCount >= totalGenres) return "Gold";
-  if (highCount >= 1) return "Silver";
+  if (highCount >= Math.ceil(totalGenres * 0.75)) return "Gold";
+  if (highCount >= Math.ceil(totalGenres * 0.4)) return "Silver";
   if (starCount >= 1) return "Starter";
   return "Beginner";
 }
@@ -599,14 +616,14 @@ function finishQuiz(genreName) {
 
   const rate = Math.round(score / questions.length * 100);
   const stars = getStars(rate);
-  const badge = getBadge(rate);
+  const badge = getBadge(rate, true);
 
   document.getElementById("resultScreen").innerHTML = `
     <h3>${genreName}</h3>
     <p>${currentUser.staffName} / ${currentUser.storeName}</p>
     <p>${score} / ${questions.length}</p>
-    <p>${rate}%</p>
-    <div class="star">${stars || "☆"}</div>
+    <p>${rate >= 80 ? `${rate}%` : `${rate}%（80%未達⭐️）`}</p>
+    ${stars ? `<div class="star">${stars}</div>` : ""}
     <div class="badge">${badge}</div>
     <div id="myRankBox" class="rank-box" style="display:none;"></div>
     <button onclick="location.reload()">もう一度受ける</button>
@@ -664,84 +681,160 @@ async function loadMyPage() {
 
     const responseData = await res.json();
     const data = responseData.results || [];
+
     const bestScores = {};
+    let latestDate = null;
+    let latestGenre = "";
 
     data.forEach(r => {
-      const testName = r[7];
-      const score = Number(r[4]);
-      const total = Number(r[5]);
+      const dateValue = r[0];
+      const score = Number(r[4] || 0);
+      const total = Number(r[5] || 0);
+      const testName = String(r[7] || "").trim();
       const percent = total > 0 ? Math.round(score / total * 100) : 0;
 
       if (!bestScores[testName] || bestScores[testName] < percent) {
         bestScores[testName] = percent;
       }
+
+      const rowDate = new Date(dateValue);
+      if (!latestDate || rowDate > latestDate) {
+        latestDate = rowDate;
+        latestGenre = testName;
+      }
     });
 
-    let html = "";
-    genreOrder.forEach(name => {
-      const percent = bestScores[name] || 0;
-      const stars = getStars(percent);
-      const badge = getBadge(percent);
+    const takenGenresCount = genreOrder.filter(name => bestScores[name] !== undefined).length;
+    const totalGenres = genreOrder.length;
 
-      html += `
-        <div class="review-box">
-          <p><strong>${name}</strong></p>
-          <p>${percent}%</p>
-          <div class="star">${stars || "☆"}</div>
-          <div class="badge">${badge}</div>
-        </div>
-      `;
-    });
+    const totalPercent = genreOrder.reduce((sum, name) => sum + (bestScores[name] || 0), 0);
+    const overallRate = Math.round(totalPercent / totalGenres);
+
+    const masteredCount = genreOrder.filter(name => (bestScores[name] || 0) === 100).length;
+    const remainForMaster = totalGenres - masteredCount;
+
+    function formatDate(dateObj) {
+      if (!dateObj) return "未受験";
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}/${m}/${d}`;
+    }
+
+    function getDisplayStatus(percent, isTaken) {
+      if (!isTaken) {
+        return {
+          text: "未受験",
+          stars: "",
+          badge: "未受験"
+        };
+      }
+
+      if (percent < 80) {
+        return {
+          text: `${percent}%（80%未達⭐️）`,
+          stars: "",
+          badge: "80%未達"
+        };
+      }
+
+      if (percent < 100) {
+        return {
+          text: `${percent}%`,
+          stars: "⭐⭐",
+          badge: "達成中"
+        };
+      }
+
+      return {
+        text: "100%",
+        stars: "⭐⭐⭐",
+        badge: "👑 マスター"
+      };
+    }
+
+    function getRecommendedGenre() {
+      const notTaken = genreOrder.find(name => bestScores[name] === undefined);
+      if (notTaken) return notTaken;
+
+      const under100 = genreOrder
+        .map(name => ({
+          name,
+          score: bestScores[name] || 0
+        }))
+        .filter(item => item.score < 100)
+        .sort((a, b) => a.score - b.score);
+
+      if (under100.length > 0) return under100[0].name;
+      return "全分野達成済み";
+    }
 
     const title = getTitle(bestScores);
     const rankData = await loadMyRank();
 
-    document.getElementById("mypageResult").innerHTML = `
+    let html = `
       <h3>${currentUser.staffName} さん</h3>
       <h4>称号：${title}</h4>
-      ${rankData ? `<div class="rank-box"><div class="rank-title">あなたの順位</div><p>${rankData.rank}位 / ${rankData.total}人中</p></div>` : ""}
-      ${html}
+
+      ${rankData ? `
+      <div class="rank-box">
+        <div class="rank-title">あなたの順位</div>
+        <p>${rankData.rank}位 / ${rankData.total}人中</p>
+      </div>` : ""}
+
+      <div class="review-box">
+        <p><strong>総合達成率</strong></p>
+        <p>${overallRate}%</p>
+      </div>
+
+      <div class="review-box">
+        <p><strong>受験済み分野数</strong></p>
+        <p>${takenGenresCount} / ${totalGenres}</p>
+      </div>
+
+      <div class="review-box">
+        <p><strong>直近の受験日</strong></p>
+        <p>${formatDate(latestDate)}</p>
+      </div>
+
+      <div class="review-box">
+        <p><strong>最後に受けたジャンル</strong></p>
+        <p>${latestGenre || "未受験"}</p>
+      </div>
+
+      <div class="review-box">
+        <p><strong>次におすすめのジャンル</strong></p>
+        <p>${getRecommendedGenre()}</p>
+      </div>
+
+      <div class="review-box">
+        <p><strong>Masterまであと何分野か</strong></p>
+        <p>${remainForMaster}分野</p>
+      </div>
     `;
-  } catch (e) {
-    console.error(e);
-    document.getElementById("mypageResult").innerHTML = "<p>読み込みに失敗しました。</p>";
-  }
-}
 
-async function loadStoreBattle() {
-  try {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "getStoreRanking"
-      })
-    });
+    html += `<div class="section-title">ジャンル別達成状況</div>`;
 
-    const data = await res.json();
+    genreOrder.forEach(name => {
+      const isTaken = bestScores[name] !== undefined;
+      const percent = bestScores[name] || 0;
+      const status = getDisplayStatus(percent, isTaken);
 
-    if (!data.ok || !data.ranking) {
-      document.getElementById("storeBattleResult").innerHTML = "<p>店舗ランキングの読み込みに失敗しました。</p>";
-      return;
-    }
-
-    let html = `<div class="rank-box"><div class="rank-title">🏆 店舗対抗ランキング</div>`;
-
-    data.ranking.forEach((row, index) => {
-      const rankLabel = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}位`;
       html += `
-        <div class="rank-item ${index < 3 ? 'top3' : ''}">
-          <span>${rankLabel} ${row.storeName}</span>
-          <span>${row.avg}%</span>
+        <div class="review-box">
+          <p><strong>${name}</strong></p>
+          <p>${status.text}</p>
+          ${status.stars ? `<div class="star">${status.stars}</div>` : ""}
+          <div class="badge">${status.badge}</div>
         </div>
       `;
     });
 
-    html += `</div>`;
-    document.getElementById("storeBattleResult").innerHTML = html;
+    document.getElementById("mypageResult").innerHTML = html;
+
   } catch (e) {
     console.error(e);
-    document.getElementById("storeBattleResult").innerHTML = "<p>店舗ランキングの読み込みに失敗しました。</p>";
+    document.getElementById("mypageResult").innerHTML = "<p>読み込みに失敗しました。</p>";
   }
 }
 </script>
