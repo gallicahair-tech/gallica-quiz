@@ -146,6 +146,32 @@ button:hover { background: #ececec; }
   color: #666;
   margin-top: 10px;
 }
+.rank-box {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+}
+.rank-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.rank-item:last-child {
+  border-bottom: none;
+}
+.rank-title {
+  font-weight: 700;
+  margin-top: 6px;
+}
+.pass { color: green; font-weight: bold; }
+.fail { color: #c62828; font-weight: bold; }
+.top3 {
+  font-weight: 700;
+}
 </style>
 </head>
 
@@ -167,6 +193,7 @@ button:hover { background: #ececec; }
 <div id="homeScreen" class="card hidden">
   <button onclick="openQuizLogin()">クイズを受ける</button>
   <button onclick="openMyPageLogin()">マイページ</button>
+  <button onclick="openStoreBattleScreen()">店舗対抗バトル</button>
 </div>
 
 <div id="quizLoginScreen" class="card hidden">
@@ -219,6 +246,11 @@ button:hover { background: #ececec; }
   <div id="mypageResult" style="margin-top:12px;"></div>
 </div>
 
+<div id="storeBattleScreen" class="card hidden">
+  <h3>店舗対抗バトル</h3>
+  <div id="storeBattleResult" style="margin-top:12px;"></div>
+</div>
+
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec";
 
@@ -240,7 +272,7 @@ let current = 0;
 let selected = null;
 let answers = [];
 let answeredCurrent = false;
-
+let currentQuestionView = null;
 let currentUser = null;
 
 function hideAllScreens() {
@@ -254,6 +286,7 @@ function hideAllScreens() {
   document.getElementById("answerFeedback").classList.add("hidden");
   document.getElementById("resultScreen").classList.add("hidden");
   document.getElementById("mypageScreen").classList.add("hidden");
+  document.getElementById("storeBattleScreen").classList.add("hidden");
   document.getElementById("nextBtn").classList.add("hidden");
 }
 
@@ -270,6 +303,13 @@ function openQuizLogin() {
 function openMyPageLogin() {
   hideAllScreens();
   document.getElementById("mypageLoginScreen").classList.remove("hidden");
+}
+
+async function openStoreBattleScreen() {
+  hideAllScreens();
+  document.getElementById("storeBattleScreen").classList.remove("hidden");
+  document.getElementById("storeBattleResult").innerHTML = '<div class="loading">ランキングを読み込み中...</div>';
+  await loadStoreBattle();
 }
 
 async function doQuizLogin() {
@@ -338,7 +378,7 @@ async function doMyPageLogin() {
     hideAllScreens();
     document.getElementById("mypageScreen").classList.remove("hidden");
     errorEl.textContent = "";
-    loadMyPage();
+    await loadMyPage();
   } catch (e) {
     console.error(e);
     errorEl.textContent = "ログインに失敗しました";
@@ -391,6 +431,31 @@ function openGenreCover() {
   errorEl.textContent = "";
 }
 
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function shuffleChoices(question) {
+  const choices = question.c.map((text, index) => ({
+    text,
+    isCorrect: index === question.a
+  }));
+
+  const shuffled = shuffleArray(choices);
+
+  return {
+    q: question.q,
+    c: shuffled.map(x => x.text),
+    a: shuffled.findIndex(x => x.isCorrect),
+    e: question.e
+  };
+}
+
 async function startQuiz() {
   const genreName = document.getElementById("genreInput").value;
 
@@ -422,11 +487,14 @@ async function startQuiz() {
       return;
     }
 
+    questions = shuffleArray(questions);
+
     score = 0;
     current = 0;
     selected = null;
     answers = [];
     answeredCurrent = false;
+    currentQuestionView = null;
 
     renderQuestion(genreName);
   } catch (e) {
@@ -436,13 +504,14 @@ async function startQuiz() {
 }
 
 function renderQuestion(genreName) {
-  const q = questions[current];
+  currentQuestionView = shuffleChoices(questions[current]);
   selected = null;
   answeredCurrent = false;
 
   document.getElementById("answerFeedback").classList.add("hidden");
   document.getElementById("nextBtn").classList.add("hidden");
 
+  const q = currentQuestionView;
   const quizEl = document.getElementById("quizScreen");
   quizEl.innerHTML = `
     <p class="small">${genreName} ${current + 1} / ${questions.length}</p>
@@ -461,7 +530,7 @@ function selectChoice(i) {
   answeredCurrent = true;
   answers.push(selected);
 
-  const q = questions[current];
+  const q = currentQuestionView;
   const isCorrect = selected === q.a;
   if (isCorrect) score++;
 
@@ -498,6 +567,32 @@ function nextQuestion() {
   }
 }
 
+async function loadMyRank() {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "getRanking"
+      })
+    });
+
+    const data = await res.json();
+    if (!data.ok || !data.ranking) return null;
+
+    const myIndex = data.ranking.findIndex(r => r.staffId === currentUser.staffId);
+    if (myIndex < 0) return null;
+
+    return {
+      rank: myIndex + 1,
+      total: data.ranking.length
+    };
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
 function finishQuiz(genreName) {
   hideAllScreens();
   document.getElementById("resultScreen").classList.remove("hidden");
@@ -513,10 +608,26 @@ function finishQuiz(genreName) {
     <p>${rate}%</p>
     <div class="star">${stars || "☆"}</div>
     <div class="badge">${badge}</div>
+    <div id="myRankBox" class="rank-box" style="display:none;"></div>
     <button onclick="location.reload()">もう一度受ける</button>
   `;
 
   saveResult(rate, genreName);
+  showMyRankInResult();
+}
+
+async function showMyRankInResult() {
+  const rankData = await loadMyRank();
+  if (!rankData) return;
+
+  const box = document.getElementById("myRankBox");
+  if (!box) return;
+
+  box.style.display = "block";
+  box.innerHTML = `
+    <div class="rank-title">あなたの順位</div>
+    <p>${rankData.rank}位 / ${rankData.total}人中</p>
+  `;
 }
 
 async function saveResult(rate, genreName) {
@@ -583,15 +694,54 @@ async function loadMyPage() {
     });
 
     const title = getTitle(bestScores);
+    const rankData = await loadMyRank();
 
     document.getElementById("mypageResult").innerHTML = `
       <h3>${currentUser.staffName} さん</h3>
       <h4>称号：${title}</h4>
+      ${rankData ? `<div class="rank-box"><div class="rank-title">あなたの順位</div><p>${rankData.rank}位 / ${rankData.total}人中</p></div>` : ""}
       ${html}
     `;
   } catch (e) {
     console.error(e);
     document.getElementById("mypageResult").innerHTML = "<p>読み込みに失敗しました。</p>";
+  }
+}
+
+async function loadStoreBattle() {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "getStoreRanking"
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok || !data.ranking) {
+      document.getElementById("storeBattleResult").innerHTML = "<p>店舗ランキングの読み込みに失敗しました。</p>";
+      return;
+    }
+
+    let html = `<div class="rank-box"><div class="rank-title">🏆 店舗対抗ランキング</div>`;
+
+    data.ranking.forEach((row, index) => {
+      const rankLabel = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}位`;
+      html += `
+        <div class="rank-item ${index < 3 ? 'top3' : ''}">
+          <span>${rankLabel} ${row.storeName}</span>
+          <span>${row.avg}%</span>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    document.getElementById("storeBattleResult").innerHTML = html;
+  } catch (e) {
+    console.error(e);
+    document.getElementById("storeBattleResult").innerHTML = "<p>店舗ランキングの読み込みに失敗しました。</p>";
   }
 }
 </script>
