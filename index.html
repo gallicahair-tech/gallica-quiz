@@ -206,26 +206,26 @@ button:hover { background: #ececec; }
   <h3>受験者情報</h3>
   <p id="staffInfoText"></p>
 
-  <select id="genreInput">
-    <option value="">ジャンルを選択</option>
+<select id="genreInput">
+  <option value="">ジャンルを選択</option>
 
-    <option value="チーム接客基礎">チーム接客基礎</option>
+  <option value="チーム接客">チーム接客</option>
 
-    <option value="カラー基礎">カラー基礎</option>
-    <option value="カラー初級">カラー初級</option>
-    <option value="カラー中級">カラー中級</option>
-    <option value="カラー上級">カラー上級</option>
+  <option value="カウンセリング基礎">カウンセリング基礎</option>
+  <option value="カウンセリング初級">カウンセリング初級</option>
+  <option value="カウンセリング中級">カウンセリング中級</option>
+  <option value="カウンセリング上級">カウンセリング上級</option>
 
-    <option value="縮毛矯正基礎">縮毛矯正基礎</option>
-    <option value="縮毛矯正初級">縮毛矯正初級</option>
-    <option value="縮毛矯正中級">縮毛矯正中級</option>
-    <option value="縮毛矯正上級">縮毛矯正上級</option>
+  <option value="カラー基礎">カラー基礎</option>
+  <option value="カラー初級">カラー初級</option>
+  <option value="カラー中級">カラー中級</option>
+  <option value="カラー上級">カラー上級</option>
 
-    <option value="カウンセリング基礎">カウンセリング基礎</option>
-    <option value="カウンセリング初級">カウンセリング初級</option>
-    <option value="カウンセリング中級">カウンセリング中級</option>
-    <option value="カウンセリング上級">カウンセリング上級</option>
-  </select>
+  <option value="縮毛矯正基礎">縮毛矯正基礎</option>
+  <option value="縮毛矯正初級">縮毛矯正初級</option>
+  <option value="縮毛矯正中級">縮毛矯正中級</option>
+  <option value="縮毛矯正上級">縮毛矯正上級</option>
+</select>
 
   <button onclick="openGenreCover()">次へ</button>
   <div id="staffError" style="color:red; margin-top:10px;"></div>
@@ -254,7 +254,12 @@ button:hover { background: #ececec; }
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec";
 
 const genreMeta = {
-  "チーム接客基礎": { short: "TEAM SERVICE QUIZ" },
+  "チーム接客": { short: "TEAM SERVICE QUIZ" },
+
+  "カウンセリング基礎": { short: "COUNSELING BASIC QUIZ" },
+  "カウンセリング初級": { short: "COUNSELING BEGINNER QUIZ" },
+  "カウンセリング中級": { short: "COUNSELING INTERMEDIATE QUIZ" },
+  "カウンセリング上級": { short: "COUNSELING ADVANCED QUIZ" },
 
   "カラー基礎": { short: "COLOR BASIC QUIZ" },
   "カラー初級": { short: "COLOR BEGINNER QUIZ" },
@@ -264,16 +269,16 @@ const genreMeta = {
   "縮毛矯正基礎": { short: "STRAIGHT BASIC QUIZ" },
   "縮毛矯正初級": { short: "STRAIGHT BEGINNER QUIZ" },
   "縮毛矯正中級": { short: "STRAIGHT INTERMEDIATE QUIZ" },
-  "縮毛矯正上級": { short: "STRAIGHT ADVANCED QUIZ" },
-
-  "カウンセリング基礎": { short: "COUNSELING BASIC QUIZ" },
-  "カウンセリング初級": { short: "COUNSELING BEGINNER QUIZ" },
-  "カウンセリング中級": { short: "COUNSELING INTERMEDIATE QUIZ" },
-  "カウンセリング上級": { short: "COUNSELING ADVANCED QUIZ" }
+  "縮毛矯正上級": { short: "STRAIGHT ADVANCED QUIZ" }
 };
 
 const genreOrder = [
-  "チーム接客基礎",
+  "チーム接客",
+
+  "カウンセリング基礎",
+  "カウンセリング初級",
+  "カウンセリング中級",
+  "カウンセリング上級",
 
   "カラー基礎",
   "カラー初級",
@@ -283,12 +288,7 @@ const genreOrder = [
   "縮毛矯正基礎",
   "縮毛矯正初級",
   "縮毛矯正中級",
-  "縮毛矯正上級",
-
-  "カウンセリング基礎",
-  "カウンセリング初級",
-  "カウンセリング中級",
-  "カウンセリング上級"
+  "縮毛矯正上級"
 ];
 
 let questions = [];
