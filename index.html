@@ -412,8 +412,8 @@ function getStars(percent) {
 function getBadge(percent, isTaken) {
   if (!isTaken) return "未受験";
   if (percent === 100) return "👑 マスター";
-  if (percent >= 80) return "達成中";
-  return "80%未達";
+  if (percent >= 80) return "✨もう少しでマスター";
+  return "🌟またチャレンジしてみて";
 }
 
 function getTitle(scoreMap) {
@@ -736,7 +736,7 @@ async function loadMyPage() {
         return {
           text: `${percent}%（80%未達⭐️）`,
           stars: "⭐️",
-          badge: "またチャレンジしてみて"
+          badge: "🌟またチャレンジしてみて"
         };
       }
 
