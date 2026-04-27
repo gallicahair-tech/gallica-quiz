@@ -458,10 +458,12 @@ function shuffleArray(arr) {
 }
 
 function shuffleChoices(question) {
-  const choices = question.c.map((text, index) => ({
-    text,
-    isCorrect: index === question.a
-  }));
+const correctIndex = Number(question.a) - 1; // ←追加
+
+const choices = question.c.map((text, index) => ({
+  text,
+  isCorrect: index === correctIndex
+}));
 
   const shuffled = shuffleArray(choices);
 
