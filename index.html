@@ -414,6 +414,12 @@ async function doMyPageLogin() {
 
     hideAllScreens();
     document.getElementById("mypageScreen").classList.remove("hidden");
+    document.getElementById("mypageResult").innerHTML = `
+  <div class="review-box" style="text-align:center;">
+    <p>成績を集計中…</p>
+    <p class="small">順位・達成率を計算しています</p>
+  </div>
+`;
     errorEl.textContent = "";
     await loadMyPage();
   } catch (e) {
