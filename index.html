@@ -537,9 +537,15 @@ function renderQuestion(genreName) {
     <h3>${q.q}</h3>
   `;
 
-  q.c.forEach((choice, i) => {
-    quizEl.innerHTML += `<button id="choice-${i}" class="choice" onclick="selectChoice(${i})">${choice}</button>`;
-  });
+q.c.forEach((choice, i) => {
+  if (!choice || choice.trim() === "") return; // ←これ追加
+
+  quizEl.innerHTML += `
+    <button id="choice-${i}" class="choice" onclick="selectChoice(${i})">
+      ${choice}
+    </button>
+  `;
+});
 }
 
 function selectChoice(i) {
