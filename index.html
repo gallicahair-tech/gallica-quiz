@@ -657,7 +657,12 @@ function selectChoice(i) {
 
   selected = i;
   answeredCurrent = true;
-  answers.push(selected);
+  answers.push({
+  question: questions[current].q,
+  selected: selected,
+  correct: currentQuestionView.a,
+  isCorrect: selected === currentQuestionView.a
+});
 
   const q = currentQuestionView;
   const isCorrect = selected === q.a;
@@ -781,6 +786,7 @@ async function saveResult(rate, genreName) {
         total: questions.length,
         rate,
         testName: genreName
+        answers: answers
       })
     });
   } catch (e) {
