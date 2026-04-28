@@ -65,10 +65,7 @@ button:hover { background: #ececec; }
   background: #fafafa;
 }
 .small { font-size: 14px; color: #666; }
-.hero {
-  overflow: hidden;
-  padding: 0;
-}
+.hero { overflow: hidden; padding: 0; }
 .hero-image {
   position: relative;
   min-height: 520px;
@@ -163,6 +160,17 @@ button:hover { background: #ececec; }
   font-size: 18px;
   font-weight: 700;
 }
+.sub-button {
+  background: #fff;
+}
+.success {
+  color: green;
+  margin-top: 10px;
+}
+.error {
+  color: red;
+  margin-top: 10px;
+}
 </style>
 </head>
 
@@ -191,7 +199,7 @@ button:hover { background: #ececec; }
   <input id="quizLoginId" placeholder="スタッフID">
   <input id="quizLoginPass" type="password" placeholder="PASS">
   <button onclick="doQuizLogin()">ログイン</button>
-  <div id="quizLoginError" style="color:red; margin-top:10px;"></div>
+  <div id="quizLoginError" class="error"></div>
 </div>
 
 <div id="mypageLoginScreen" class="card hidden">
@@ -199,36 +207,36 @@ button:hover { background: #ececec; }
   <input id="mypageLoginId" placeholder="スタッフID">
   <input id="mypageLoginPass" type="password" placeholder="PASS">
   <button onclick="doMyPageLogin()">ログイン</button>
-  <div id="mypageLoginError" style="color:red; margin-top:10px;"></div>
+  <div id="mypageLoginError" class="error"></div>
 </div>
 
 <div id="staffScreen" class="card hidden">
   <h3>受験者情報</h3>
   <p id="staffInfoText"></p>
 
-<select id="genreInput">
-  <option value="">ジャンルを選択</option>
+  <select id="genreInput">
+    <option value="">ジャンルを選択</option>
 
-  <option value="チーム接客">チーム接客</option>
+    <option value="チーム接客">チーム接客</option>
 
-  <option value="カウンセリング基礎">カウンセリング基礎</option>
-  <option value="カウンセリング初級">カウンセリング初級</option>
-  <option value="カウンセリング中級">カウンセリング中級</option>
-  <option value="カウンセリング上級">カウンセリング上級</option>
+    <option value="カウンセリング基礎">カウンセリング基礎</option>
+    <option value="カウンセリング初級">カウンセリング初級</option>
+    <option value="カウンセリング中級">カウンセリング中級</option>
+    <option value="カウンセリング上級">カウンセリング上級</option>
 
-  <option value="カラー基礎">カラー基礎</option>
-  <option value="カラー初級">カラー初級</option>
-  <option value="カラー中級">カラー中級</option>
-  <option value="カラー上級">カラー上級</option>
+    <option value="カラー基礎">カラー基礎</option>
+    <option value="カラー初級">カラー初級</option>
+    <option value="カラー中級">カラー中級</option>
+    <option value="カラー上級">カラー上級</option>
 
-  <option value="縮毛矯正基礎">縮毛矯正基礎</option>
-  <option value="縮毛矯正初級">縮毛矯正初級</option>
-  <option value="縮毛矯正中級">縮毛矯正中級</option>
-  <option value="縮毛矯正上級">縮毛矯正上級</option>
-</select>
+    <option value="縮毛矯正基礎">縮毛矯正基礎</option>
+    <option value="縮毛矯正初級">縮毛矯正初級</option>
+    <option value="縮毛矯正中級">縮毛矯正中級</option>
+    <option value="縮毛矯正上級">縮毛矯正上級</option>
+  </select>
 
   <button onclick="openGenreCover()">次へ</button>
-  <div id="staffError" style="color:red; margin-top:10px;"></div>
+  <div id="staffError" class="error"></div>
 </div>
 
 <div id="genreCoverScreen" class="card genre-hero hidden">
@@ -247,7 +255,23 @@ button:hover { background: #ececec; }
 <div id="mypageScreen" class="card hidden">
   <h3>マイページ</h3>
   <p id="mypageInfoText"></p>
+  <button class="sub-button" onclick="openPasswordChange()">パスワード変更</button>
   <div id="mypageResult" style="margin-top:12px;"></div>
+</div>
+
+<div id="passwordScreen" class="card hidden">
+  <h3>パスワード変更</h3>
+  <p id="passwordUserText" class="small"></p>
+
+  <input id="currentPass" type="password" placeholder="現在のパスワード">
+  <input id="newPass" type="password" placeholder="新しいパスワード">
+  <input id="newPass2" type="password" placeholder="新しいパスワード（確認）">
+
+  <button onclick="changePassword()">変更する</button>
+  <button class="sub-button" onclick="backToMyPage()">マイページに戻る</button>
+
+  <div id="passError" class="error"></div>
+  <div id="passSuccess" class="success"></div>
 </div>
 
 <script>
@@ -311,6 +335,7 @@ function hideAllScreens() {
   document.getElementById("answerFeedback").classList.add("hidden");
   document.getElementById("resultScreen").classList.add("hidden");
   document.getElementById("mypageScreen").classList.add("hidden");
+  document.getElementById("passwordScreen").classList.add("hidden");
   document.getElementById("nextBtn").classList.add("hidden");
 }
 
@@ -338,11 +363,7 @@ async function doQuizLogin() {
     const res = await fetch(GAS_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "login",
-        staffId,
-        password
-      })
+      body: JSON.stringify({ action: "login", staffId, password })
     });
 
     const data = await res.json();
@@ -374,11 +395,7 @@ async function doMyPageLogin() {
     const res = await fetch(GAS_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "login",
-        staffId,
-        password
-      })
+      body: JSON.stringify({ action: "login", staffId, password })
     });
 
     const data = await res.json();
@@ -399,6 +416,84 @@ async function doMyPageLogin() {
   } catch (e) {
     console.error(e);
     errorEl.textContent = "ログインに失敗しました";
+  }
+}
+
+function openPasswordChange() {
+  if (!currentUser) {
+    showHome();
+    return;
+  }
+
+  hideAllScreens();
+  document.getElementById("passwordScreen").classList.remove("hidden");
+  document.getElementById("passwordUserText").textContent =
+    `${currentUser.staffName} / ${currentUser.storeName}`;
+
+  document.getElementById("currentPass").value = "";
+  document.getElementById("newPass").value = "";
+  document.getElementById("newPass2").value = "";
+  document.getElementById("passError").textContent = "";
+  document.getElementById("passSuccess").textContent = "";
+}
+
+function backToMyPage() {
+  hideAllScreens();
+  document.getElementById("mypageScreen").classList.remove("hidden");
+}
+
+async function changePassword() {
+  const currentPass = document.getElementById("currentPass").value.trim();
+  const newPass = document.getElementById("newPass").value.trim();
+  const newPass2 = document.getElementById("newPass2").value.trim();
+  const errorEl = document.getElementById("passError");
+  const successEl = document.getElementById("passSuccess");
+
+  errorEl.textContent = "";
+  successEl.textContent = "";
+
+  if (!currentPass || !newPass || !newPass2) {
+    errorEl.textContent = "すべて入力してください";
+    return;
+  }
+
+  if (newPass.length < 4) {
+    errorEl.textContent = "新しいパスワードは4文字以上にしてください";
+    return;
+  }
+
+  if (newPass !== newPass2) {
+    errorEl.textContent = "新しいパスワードが一致しません";
+    return;
+  }
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "changePassword",
+        staffId: currentUser.staffId,
+        currentPass,
+        newPass
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      errorEl.textContent = data.error || "変更できませんでした";
+      return;
+    }
+
+    successEl.textContent = "パスワードを変更しました";
+    document.getElementById("currentPass").value = "";
+    document.getElementById("newPass").value = "";
+    document.getElementById("newPass2").value = "";
+
+  } catch (e) {
+    console.error(e);
+    errorEl.textContent = "エラーが発生しました";
   }
 }
 
@@ -436,7 +531,7 @@ function openGenreCover() {
   const errorEl = document.getElementById("staffError");
 
   if (!genreValue) {
-    errorEl.textContent = "ジャンルを入力してください。";
+    errorEl.textContent = "ジャンルを選択してください。";
     return;
   }
 
@@ -458,12 +553,14 @@ function shuffleArray(arr) {
 }
 
 function shuffleChoices(question) {
-const correctIndex = Number(question.a) - 1; // ←追加
+  const correctIndex = Number(question.a) - 1;
 
-const choices = question.c.map((text, index) => ({
-  text,
-  isCorrect: index === correctIndex
-}));
+  const choices = question.c
+    .map((text, index) => ({
+      text: String(text || "").trim(),
+      isCorrect: index === correctIndex
+    }))
+    .filter(choice => choice.text !== "");
 
   const shuffled = shuffleArray(choices);
 
@@ -537,15 +634,13 @@ function renderQuestion(genreName) {
     <h3>${q.q}</h3>
   `;
 
-q.c.forEach((choice, i) => {
-  if (!choice || choice.trim() === "") return; // ←これ追加
-
-  quizEl.innerHTML += `
-    <button id="choice-${i}" class="choice" onclick="selectChoice(${i})">
-      ${choice}
-    </button>
-  `;
-});
+  q.c.forEach((choice, i) => {
+    quizEl.innerHTML += `
+      <button id="choice-${i}" class="choice" onclick="selectChoice(${i})">
+        ${choice}
+      </button>
+    `;
+  });
 }
 
 function selectChoice(i) {
@@ -592,32 +687,34 @@ function nextQuestion() {
   }
 }
 
+function getRankingValue(row) {
+  return Number(row.totalRate ?? row.overallRate ?? row.rate ?? row.score ?? 0);
+}
+
 async function loadMyRank() {
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "getRanking"
-      })
+      body: JSON.stringify({ action: "getRanking" })
     });
 
     const data = await res.json();
     if (!data.ok || !data.ranking) return null;
 
     const me = data.ranking.find(r => r.staffId === currentUser.staffId);
-if (!me) return null;
+    if (!me) return null;
 
-// 同率順位対応
-// 自分より点数が高い人だけを数える
-const higherCount = data.ranking.filter(r => {
-  return Number(r.totalRate || r.rate || r.score || 0) > Number(me.totalRate || me.rate || me.score || 0);
-}).length;
+    const myValue = getRankingValue(me);
 
-return {
-  rank: higherCount + 1,
-  total: data.ranking.length
-};
+    const higherCount = data.ranking.filter(r => {
+      return getRankingValue(r) > myValue;
+    }).length;
+
+    return {
+      rank: higherCount + 1,
+      total: data.ranking.length
+    };
   } catch (e) {
     console.error(e);
     return null;
@@ -707,14 +804,18 @@ async function loadMyPage() {
       const testName = String(r[7] || "").trim();
       const percent = total > 0 ? Math.round(score / total * 100) : 0;
 
-      if (!bestScores[testName] || bestScores[testName] < percent) {
-        bestScores[testName] = percent;
+      if (testName === "チーム接客基礎") {
+        bestScores["チーム接客"] = Math.max(bestScores["チーム接客"] || 0, percent);
+      } else {
+        if (!bestScores[testName] || bestScores[testName] < percent) {
+          bestScores[testName] = percent;
+        }
       }
 
       const rowDate = new Date(dateValue);
       if (!latestDate || rowDate > latestDate) {
         latestDate = rowDate;
-        latestGenre = testName;
+        latestGenre = testName === "チーム接客基礎" ? "チーム接客" : testName;
       }
     });
 
@@ -737,11 +838,7 @@ async function loadMyPage() {
 
     function getDisplayStatus(percent, isTaken) {
       if (!isTaken) {
-        return {
-          text: "未受験",
-          stars: "",
-          badge: "未受験"
-        };
+        return { text: "未受験", stars: "", badge: "未受験" };
       }
 
       if (percent < 80) {
@@ -772,10 +869,7 @@ async function loadMyPage() {
       if (notTaken) return notTaken;
 
       const under100 = genreOrder
-        .map(name => ({
-          name,
-          score: bestScores[name] || 0
-        }))
+        .map(name => ({ name, score: bestScores[name] || 0 }))
         .filter(item => item.score < 100)
         .sort((a, b) => a.score - b.score);
 
