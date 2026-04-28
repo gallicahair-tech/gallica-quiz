@@ -605,13 +605,19 @@ async function loadMyRank() {
     const data = await res.json();
     if (!data.ok || !data.ranking) return null;
 
-    const myIndex = data.ranking.findIndex(r => r.staffId === currentUser.staffId);
-    if (myIndex < 0) return null;
+    const me = data.ranking.find(r => r.staffId === currentUser.staffId);
+if (!me) return null;
 
-    return {
-      rank: myIndex + 1,
-      total: data.ranking.length
-    };
+// 同率順位対応
+// 自分より点数が高い人だけを数える
+const higherCount = data.ranking.filter(r => {
+  return Number(r.totalRate || r.rate || r.score || 0) > Number(me.totalRate || me.rate || me.score || 0);
+}).length;
+
+return {
+  rank: higherCount + 1,
+  total: data.ranking.length
+};
   } catch (e) {
     console.error(e);
     return null;
