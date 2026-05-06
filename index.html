@@ -214,26 +214,28 @@ button:hover { background: #ececec; }
   <h3>受験者情報</h3>
   <p id="staffInfoText"></p>
 
-  <select id="genreInput">
-    <option value="">ジャンルを選択</option>
+ <select id="genreInput">
+  <option value="">ジャンルを選択</option>
 
-    <option value="チーム接客">チーム接客</option>
+  <option value="チーム接客">チーム接客</option>
 
-    <option value="カウンセリング基礎">カウンセリング基礎</option>
-    <option value="カウンセリング初級">カウンセリング初級</option>
-    <option value="カウンセリング中級">カウンセリング中級</option>
-    <option value="カウンセリング上級">カウンセリング上級</option>
+  <option value="カウンセリング基礎">カウンセリング基礎</option>
+  <option value="カウンセリング・初級">カウンセリング・初級</option>
+  <option value="カウンセリング・中級">カウンセリング・中級</option>
+  <option value="カウンセリング・上級">カウンセリング・上級</option>
 
-    <option value="カラー基礎">カラー基礎</option>
-    <option value="カラー初級">カラー初級</option>
-    <option value="カラー中級">カラー中級</option>
-    <option value="カラー上級">カラー上級</option>
+  <option value="カラー基礎①">カラー基礎①</option>
+  <option value="カラー基礎②">カラー基礎②</option>
+  <option value="カラー実践・初級">カラー実践・初級</option>
+  <option value="カラー実践・中級">カラー実践・中級</option>
+  <option value="カラー実践・上級">カラー実践・上級</option>
 
-    <option value="縮毛矯正基礎">縮毛矯正基礎</option>
-    <option value="縮毛矯正初級">縮毛矯正初級</option>
-    <option value="縮毛矯正中級">縮毛矯正中級</option>
-    <option value="縮毛矯正上級">縮毛矯正上級</option>
-  </select>
+  <option value="縮毛矯正基礎①">縮毛矯正基礎①</option>
+  <option value="縮毛矯正基礎②">縮毛矯正基礎②</option>
+  <option value="縮毛矯正実践・初級">縮毛矯正実践・初級</option>
+  <option value="縮毛矯正実践・中級">縮毛矯正実践・中級</option>
+  <option value="縮毛矯正実践・上級">縮毛矯正実践・上級</option>
+</select>
 
   <button onclick="openGenreCover()">次へ</button>
   <div id="staffError" class="error"></div>
@@ -284,39 +286,67 @@ const genreMeta = {
   "チーム接客": { short: "TEAM SERVICE QUIZ" },
 
   "カウンセリング基礎": { short: "COUNSELING BASIC QUIZ" },
-  "カウンセリング初級": { short: "COUNSELING BEGINNER QUIZ" },
-  "カウンセリング中級": { short: "COUNSELING INTERMEDIATE QUIZ" },
-  "カウンセリング上級": { short: "COUNSELING ADVANCED QUIZ" },
+  "カウンセリング・初級": { short: "COUNSELING BEGINNER QUIZ" },
+  "カウンセリング・中級": { short: "COUNSELING INTERMEDIATE QUIZ" },
+  "カウンセリング・上級": { short: "COUNSELING ADVANCED QUIZ" },
 
-  "カラー基礎": { short: "COLOR BASIC QUIZ" },
-  "カラー初級": { short: "COLOR BEGINNER QUIZ" },
-  "カラー中級": { short: "COLOR INTERMEDIATE QUIZ" },
-  "カラー上級": { short: "COLOR ADVANCED QUIZ" },
+  "カラー基礎①": { short: "COLOR BASIC 1 QUIZ" },
+  "カラー基礎②": { short: "COLOR BASIC 2 QUIZ" },
+  "カラー実践・初級": { short: "COLOR PRACTICE BEGINNER QUIZ" },
+  "カラー実践・中級": { short: "COLOR PRACTICE INTERMEDIATE QUIZ" },
+  "カラー実践・上級": { short: "COLOR PRACTICE ADVANCED QUIZ" },
 
-  "縮毛矯正基礎": { short: "STRAIGHT BASIC QUIZ" },
-  "縮毛矯正初級": { short: "STRAIGHT BEGINNER QUIZ" },
-  "縮毛矯正中級": { short: "STRAIGHT INTERMEDIATE QUIZ" },
-  "縮毛矯正上級": { short: "STRAIGHT ADVANCED QUIZ" }
+  "縮毛矯正基礎①": { short: "STRAIGHT BASIC 1 QUIZ" },
+  "縮毛矯正基礎②": { short: "STRAIGHT BASIC 2 QUIZ" },
+  "縮毛矯正実践・初級": { short: "STRAIGHT PRACTICE BEGINNER QUIZ" },
+  "縮毛矯正実践・中級": { short: "STRAIGHT PRACTICE INTERMEDIATE QUIZ" },
+  "縮毛矯正実践・上級": { short: "STRAIGHT PRACTICE ADVANCED QUIZ" }
 };
 
 const genreOrder = [
   "チーム接客",
 
   "カウンセリング基礎",
-  "カウンセリング初級",
-  "カウンセリング中級",
-  "カウンセリング上級",
+  "カウンセリング・初級",
+  "カウンセリング・中級",
+  "カウンセリング・上級",
 
-  "カラー基礎",
-  "カラー初級",
-  "カラー中級",
-  "カラー上級",
+  "カラー基礎①",
+  "カラー基礎②",
+  "カラー実践・初級",
+  "カラー実践・中級",
+  "カラー実践・上級",
 
-  "縮毛矯正基礎",
-  "縮毛矯正初級",
-  "縮毛矯正中級",
-  "縮毛矯正上級"
+  "縮毛矯正基礎①",
+  "縮毛矯正基礎②",
+  "縮毛矯正実践・初級",
+  "縮毛矯正実践・中級",
+  "縮毛矯正実践・上級"
 ];
+
+const categoryGroups = {
+  "チーム接客": ["チーム接客"],
+  "カウンセリング": [
+    "カウンセリング基礎",
+    "カウンセリング・初級",
+    "カウンセリング・中級",
+    "カウンセリング・上級"
+  ],
+  "カラー": [
+    "カラー基礎①",
+    "カラー基礎②",
+    "カラー実践・初級",
+    "カラー実践・中級",
+    "カラー実践・上級"
+  ],
+  "縮毛矯正": [
+    "縮毛矯正基礎①",
+    "縮毛矯正基礎②",
+    "縮毛矯正実践・初級",
+    "縮毛矯正実践・中級",
+    "縮毛矯正実践・上級"
+  ]
+};
 
 let questions = [];
 let score = 0;
