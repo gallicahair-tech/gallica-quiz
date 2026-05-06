@@ -936,7 +936,12 @@ const categoryMasters = getCategoryMasters();
     let html = `
       <h3>${currentUser.staffName} さん</h3>
       <h4>称号：${title}</h4>
-
+${categoryMasters.length ? `
+  <div class="review-box">
+    <p><strong>分野マスター</strong></p>
+    <p>${categoryMasters.join(" / ")}</p>
+  </div>
+` : ""}
       ${rankData ? `
       <div class="rank-box">
         <div class="rank-title">あなたの順位</div>
