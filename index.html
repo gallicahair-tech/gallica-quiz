@@ -921,7 +921,15 @@ async function loadMyPage() {
       if (under100.length > 0) return under100[0].name;
       return "全分野達成済み";
     }
+function getCategoryMasters() {
+  return Object.entries(categoryGroups)
+    .filter(([categoryName, genres]) => {
+      return genres.every(name => (bestScores[name] || 0) === 100);
+    })
+    .map(([categoryName]) => `${categoryName}マスター`);
+}
 
+const categoryMasters = getCategoryMasters();
     const title = getTitle(bestScores);
     const rankData = await loadMyRank();
 
