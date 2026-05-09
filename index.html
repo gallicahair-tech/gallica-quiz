@@ -171,6 +171,72 @@ button:hover { background: #ececec; }
   color: red;
   margin-top: 10px;
 }
+.step-summary {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+}
+
+.step-stage-title {
+  margin-top: 24px;
+  padding: 10px 12px;
+  background: #111;
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.step-item {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.step-item-title {
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.step-memo {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.step-check-btn {
+  margin-top: 10px;
+  background: #fff;
+}
+
+.step-check-btn.done {
+  background: #e8f7e8;
+  border-color: #3ea55b;
+}
+
+.step-dots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.step-dot {
+  padding: 10px 0;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.step-dot.done {
+  background: #e8f7e8;
+  border-color: #3ea55b;
+  font-weight: 700;
+}  
 </style>
 </head>
 
@@ -202,7 +268,19 @@ button:hover { background: #ececec; }
   <button onclick="doQuizLogin()">ログイン</button>
   <div id="quizLoginError" class="error"></div>
 </div>
+<div id="stepLoginScreen" class="card hidden">
+  <h3>ステップ表 ログイン</h3>
+  <input id="stepLoginId" placeholder="スタッフID">
+  <input id="stepLoginPass" type="password" placeholder="PASS">
+  <button onclick="doStepLogin()">ログイン</button>
+  <div id="stepLoginError" class="error"></div>
+</div>
 
+<div id="stepScreen" class="card hidden">
+  <h3>ステップ表</h3>
+  <p id="stepInfoText"></p>
+  <div id="stepResult" style="margin-top:12px;"></div>
+</div>
 <div id="mypageLoginScreen" class="card hidden">
   <h3>マイページ ログイン</h3>
   <input id="mypageLoginId" placeholder="スタッフID">
@@ -210,7 +288,19 @@ button:hover { background: #ececec; }
   <button onclick="doMyPageLogin()">ログイン</button>
   <div id="mypageLoginError" class="error"></div>
 </div>
+<div id="stepLoginScreen" class="card hidden">
+  <h3>ステップ表 ログイン</h3>
+  <input id="stepLoginId" placeholder="スタッフID">
+  <input id="stepLoginPass" type="password" placeholder="PASS">
+  <button onclick="doStepLogin()">ログイン</button>
+  <div id="stepLoginError" class="error"></div>
+</div>
 
+<div id="stepScreen" class="card hidden">
+  <h3>ステップ表</h3>
+  <p id="stepInfoText"></p>
+  <div id="stepResult" style="margin-top:12px;"></div>
+</div>
 <div id="staffScreen" class="card hidden">
   <h3>受験者情報</h3>
   <p id="staffInfoText"></p>
@@ -363,6 +453,8 @@ function hideAllScreens() {
   document.getElementById("homeScreen").classList.add("hidden");
   document.getElementById("quizLoginScreen").classList.add("hidden");
   document.getElementById("mypageLoginScreen").classList.add("hidden");
+  document.getElementById("stepLoginScreen").classList.add("hidden");
+  document.getElementById("stepScreen").classList.add("hidden");
   document.getElementById("staffScreen").classList.add("hidden");
   document.getElementById("genreCoverScreen").classList.add("hidden");
   document.getElementById("quizScreen").classList.add("hidden");
@@ -387,7 +479,237 @@ function openMyPageLogin() {
   hideAllScreens();
   document.getElementById("mypageLoginScreen").classList.remove("hidden");
 }
+let stepItems = [];
+let stepProgressMap = {};
 
+function openStepLogin() {
+  hideAllScreens();
+  document.getElementById("stepLoginScreen").classList.remove("hidden");
+}
+
+async function doStepLogin() {
+  const staffId = document.getElementById("stepLoginId").value.trim();
+  const password = document.getElementById("stepLoginPass").value.trim();
+  const errorEl = document.getElementById("stepLoginError");
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "login",
+        staffId,
+        password
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      errorEl.textContent = data.error || "ログインに失敗しました";
+      return;
+    }
+
+    currentUser = data.user;
+
+    document.getElementById("stepInfoText").textContent =
+      `${currentUser.staffName} / ${currentUser.storeName}`;
+
+    hideAllScreens();
+    document.getElementById("stepScreen").classList.remove("hidden");
+
+    document.getElementById("stepResult").innerHTML = `
+      <div class="review-box" style="text-align:center;">
+        <p>ステップ表を読み込み中…</p>
+        <p class="small">進捗を確認しています</p>
+      </div>
+    `;
+
+    errorEl.textContent = "";
+    await loadStepPage();
+
+  } catch (e) {
+    console.error(e);
+    errorEl.textContent = "ログインに失敗しました";
+  }
+}
+
+function getStepKey(itemId, countNo) {
+  return `${itemId}__${countNo}`;
+}
+
+async function loadStepPage() {
+  try {
+    const itemRes = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "getStepItems"
+      })
+    });
+
+    const itemData = await itemRes.json();
+
+    if (!itemData.ok) {
+      document.getElementById("stepResult").innerHTML =
+        `<p>ステップ項目の読み込みに失敗しました。</p>`;
+      return;
+    }
+
+    const progressRes = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "getStepProgress",
+        staffId: currentUser.staffId
+      })
+    });
+
+    const progressData = await progressRes.json();
+
+    if (!progressData.ok) {
+      document.getElementById("stepResult").innerHTML =
+        `<p>進捗の読み込みに失敗しました。</p>`;
+      return;
+    }
+
+    stepItems = itemData.items || [];
+    stepProgressMap = {};
+
+    const progress = progressData.progress || [];
+    progress.forEach(p => {
+      stepProgressMap[getStepKey(p.itemId, p.countNo)] = p.checked === true;
+    });
+
+    renderStepPage();
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById("stepResult").innerHTML =
+      `<p>ステップ表の読み込みに失敗しました。</p>`;
+  }
+}
+
+function renderStepPage() {
+  let totalChecks = 0;
+  let doneChecks = 0;
+
+  stepItems.forEach(item => {
+    const requiredCount = Number(item.requiredCount || 1);
+
+    for (let i = 1; i <= requiredCount; i++) {
+      totalChecks++;
+      if (stepProgressMap[getStepKey(item.itemId, i)] === true) {
+        doneChecks++;
+      }
+    }
+  });
+
+  const progressRate = totalChecks > 0
+    ? Math.round(doneChecks / totalChecks * 100)
+    : 0;
+
+  let html = `
+    <div class="step-summary">
+      <p><strong>全体進捗</strong></p>
+      <p>${doneChecks} / ${totalChecks}</p>
+      <p>${progressRate}%</p>
+    </div>
+  `;
+
+  const grouped = {};
+
+  stepItems.forEach(item => {
+    if (!grouped[item.stage]) grouped[item.stage] = [];
+    grouped[item.stage].push(item);
+  });
+
+  Object.keys(grouped).forEach(stage => {
+    html += `<div class="step-stage-title">${stage}</div>`;
+
+    grouped[stage].forEach(item => {
+      const requiredCount = Number(item.requiredCount || 1);
+      const checkType = item.checkType || "single";
+
+      html += `
+        <div class="step-item">
+          <div class="step-item-title">
+            ${item.stepNo ? item.stepNo + ". " : ""}${item.itemName}
+          </div>
+          ${item.memo ? `<div class="step-memo">${item.memo}</div>` : ""}
+      `;
+
+      if (checkType === "count" || requiredCount > 1) {
+        html += `<div class="step-dots">`;
+
+        for (let i = 1; i <= requiredCount; i++) {
+          const checked = stepProgressMap[getStepKey(item.itemId, i)] === true;
+
+          html += `
+            <button
+              class="step-dot ${checked ? "done" : ""}"
+              onclick="toggleStepProgress('${item.itemId}', ${i}, ${!checked})"
+            >
+              ${checked ? "○" : i}
+            </button>
+          `;
+        }
+
+        html += `</div>`;
+
+      } else {
+        const checked = stepProgressMap[getStepKey(item.itemId, 1)] === true;
+
+        html += `
+          <button
+            class="step-check-btn ${checked ? "done" : ""}"
+            onclick="toggleStepProgress('${item.itemId}', 1, ${!checked})"
+          >
+            ${checked ? "○ 合格済み" : "未チェック"}
+          </button>
+        `;
+      }
+
+      html += `</div>`;
+    });
+  });
+
+  document.getElementById("stepResult").innerHTML = html;
+}
+
+async function toggleStepProgress(itemId, countNo, checked) {
+  stepProgressMap[getStepKey(itemId, countNo)] = checked;
+  renderStepPage();
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "saveStepProgress",
+        staffId: currentUser.staffId,
+        staffName: currentUser.staffName,
+        itemId,
+        countNo,
+        checked
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      alert(data.error || "保存に失敗しました");
+      stepProgressMap[getStepKey(itemId, countNo)] = !checked;
+      renderStepPage();
+    }
+
+  } catch (e) {
+    console.error(e);
+    alert("保存に失敗しました");
+    stepProgressMap[getStepKey(itemId, countNo)] = !checked;
+    renderStepPage();
+  }
+}
 async function doQuizLogin() {
   const staffId = document.getElementById("quizLoginId").value.trim();
   const password = document.getElementById("quizLoginPass").value.trim();
