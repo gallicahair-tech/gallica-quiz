@@ -1172,7 +1172,6 @@ function renderQuestion(genreName) {
   const quizEl = document.getElementById("quizScreen");
 
   quizEl.innerHTML = `
-    <button class="sub-button" onclick="confirmBackHome()">前のページに戻る</button>
     <p class="small">${genreName} ${current + 1} / ${questions.length}</p>
     <h3>${q.q}</h3>
   `;
