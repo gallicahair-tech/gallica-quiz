@@ -299,55 +299,30 @@ button:hover { background: #ececec; }
   全分野のマスタークラスを目指し、<br>
   一流のスタイリストになりましょう。
 </div>
-      <button class="hero-start" onclick="showHome()">はじめる</button>
+      <button class="hero-start" onclick="openAppLogin()">はじめる</button>
     </div>
   </div>
 </div>
 
+<div id="appLoginScreen" class="card hidden">
+  <h3>ログイン</h3>
+  <input id="appLoginId" placeholder="スタッフID">
+  <input id="appLoginPass" type="password" placeholder="PASS">
+  <button onclick="doAppLogin()">ログイン</button>
+  <div id="appLoginError" class="error"></div>
+</div>
+
 <div id="homeScreen" class="card hidden">
-  <button onclick="openQuizLogin()">クイズを受ける</button>
-  <button onclick="openMyPageLogin()">マイページ</button>
-  <button onclick="openStepLogin()">ステップ表</button>
-</div>
-
-<div id="quizLoginScreen" class="card hidden">
-  <h3>クイズ ログイン</h3>
-  <input id="quizLoginId" placeholder="スタッフID">
-  <input id="quizLoginPass" type="password" placeholder="PASS">
-  <button onclick="doQuizLogin()">ログイン</button>
-  <div id="quizLoginError" class="error"></div>
-</div>
-<div id="stepLoginScreen" class="card hidden">
-  <h3>ステップ表 ログイン</h3>
-  <input id="stepLoginId" placeholder="スタッフID">
-  <input id="stepLoginPass" type="password" placeholder="PASS">
-  <button onclick="doStepLogin()">ログイン</button>
-  <div id="stepLoginError" class="error"></div>
+  <p id="homeUserText" class="small"></p>
+  <button onclick="openQuizHome()">クイズを受ける</button>
+  <button onclick="openMyPageHome()">マイページ</button>
+  <button onclick="openStepHome()">ステップ表</button>
 </div>
 
 <div id="stepScreen" class="card hidden">
   <h3>ステップ表</h3>
   <p id="stepInfoText"></p>
-  <div id="stepResult" style="margin-top:12px;"></div>
-</div>
-<div id="mypageLoginScreen" class="card hidden">
-  <h3>マイページ ログイン</h3>
-  <input id="mypageLoginId" placeholder="スタッフID">
-  <input id="mypageLoginPass" type="password" placeholder="PASS">
-  <button onclick="doMyPageLogin()">ログイン</button>
-  <div id="mypageLoginError" class="error"></div>
-</div>
-<div id="stepLoginScreen" class="card hidden">
-  <h3>ステップ表 ログイン</h3>
-  <input id="stepLoginId" placeholder="スタッフID">
-  <input id="stepLoginPass" type="password" placeholder="PASS">
-  <button onclick="doStepLogin()">ログイン</button>
-  <div id="stepLoginError" class="error"></div>
-</div>
-
-<div id="stepScreen" class="card hidden">
-  <h3>ステップ表</h3>
-  <p id="stepInfoText"></p>
+  <button class="sub-button" onclick="backHome()">前のページに戻る</button>
   <div id="stepResult" style="margin-top:12px;"></div>
 </div>
 <div id="staffScreen" class="card hidden">
@@ -377,15 +352,17 @@ button:hover { background: #ececec; }
   <option value="縮毛矯正実践・上級">縮毛矯正実践・上級</option>
 </select>
 
-  <button onclick="openGenreCover()">次へ</button>
-  <div id="staffError" class="error"></div>
+ <button onclick="openGenreCover()">次へ</button>
+<button class="sub-button" onclick="backHome()">前のページに戻る</button>
+<div id="staffError" class="error"></div>
 </div>
 
 <div id="genreCoverScreen" class="card genre-hero hidden">
   <h1 id="genreTitle">QUIZ</h1>
   <p id="genreSubtitle">knowledge check</p>
-  <p class="small">準備ができたらスタートしてください</p>
-  <button onclick="startQuiz()">スタート</button>
+ <p class="small">準備ができたらスタートしてください</p>
+<button onclick="startQuiz()">スタート</button>
+<button class="sub-button" onclick="openQuizHome()">前のページに戻る</button>
 </div>
 
 <div id="quizScreen" class="card hidden"></div>
@@ -402,8 +379,11 @@ button:hover { background: #ececec; }
   <button class="sub-button" onclick="openPasswordChange()">
     パスワード変更
   </button>
-</div>
 
+  <button class="sub-button" onclick="backHome()">
+    前のページに戻る
+  </button>
+</div>
 <div id="passwordScreen" class="card hidden">
   <h3>パスワード変更</h3>
   <p id="passwordUserText" class="small"></p>
@@ -497,36 +477,138 @@ let answeredCurrent = false;
 let currentQuestionView = null;
 let currentUser = null;
 
+function hideScreen(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add("hidden");
+}
+
 function hideAllScreens() {
-  document.getElementById("coverScreen").classList.add("hidden");
-  document.getElementById("homeScreen").classList.add("hidden");
-  document.getElementById("quizLoginScreen").classList.add("hidden");
-  document.getElementById("mypageLoginScreen").classList.add("hidden");
-  document.getElementById("stepLoginScreen").classList.add("hidden");
-  document.getElementById("stepScreen").classList.add("hidden");
-  document.getElementById("staffScreen").classList.add("hidden");
-  document.getElementById("genreCoverScreen").classList.add("hidden");
-  document.getElementById("quizScreen").classList.add("hidden");
-  document.getElementById("answerFeedback").classList.add("hidden");
-  document.getElementById("resultScreen").classList.add("hidden");
-  document.getElementById("mypageScreen").classList.add("hidden");
-  document.getElementById("passwordScreen").classList.add("hidden");
-  document.getElementById("nextBtn").classList.add("hidden");
+  [
+    "coverScreen",
+    "appLoginScreen",
+    "homeScreen",
+    "stepScreen",
+    "staffScreen",
+    "genreCoverScreen",
+    "quizScreen",
+    "answerFeedback",
+    "resultScreen",
+    "mypageScreen",
+    "passwordScreen",
+    "nextBtn"
+  ].forEach(hideScreen);
+}
+
+function openAppLogin() {
+  hideAllScreens();
+  document.getElementById("appLoginScreen").classList.remove("hidden");
 }
 
 function showHome() {
+  if (!currentUser) {
+    openAppLogin();
+    return;
+  }
+
   hideAllScreens();
+  document.getElementById("homeUserText").textContent =
+    `${currentUser.staffName} / ${currentUser.storeName}`;
   document.getElementById("homeScreen").classList.remove("hidden");
 }
 
-function openQuizLogin() {
-  hideAllScreens();
-  document.getElementById("quizLoginScreen").classList.remove("hidden");
+function backHome() {
+  showHome();
 }
 
-function openMyPageLogin() {
+async function doAppLogin() {
+  const staffId = document.getElementById("appLoginId").value.trim();
+  const password = document.getElementById("appLoginPass").value.trim();
+  const errorEl = document.getElementById("appLoginError");
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "login",
+        staffId,
+        password
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      errorEl.textContent = data.error || "ログインに失敗しました";
+      return;
+    }
+
+    currentUser = data.user;
+    errorEl.textContent = "";
+
+    showHome();
+
+  } catch (e) {
+    console.error(e);
+    errorEl.textContent = "ログインに失敗しました";
+  }
+}
+
+function openQuizHome() {
+  if (!currentUser) {
+    openAppLogin();
+    return;
+  }
+
+  document.getElementById("staffInfoText").textContent =
+    `${currentUser.staffName} / ${currentUser.storeName}`;
+
   hideAllScreens();
-  document.getElementById("mypageLoginScreen").classList.remove("hidden");
+  document.getElementById("staffScreen").classList.remove("hidden");
+}
+
+async function openMyPageHome() {
+  if (!currentUser) {
+    openAppLogin();
+    return;
+  }
+
+  document.getElementById("mypageInfoText").textContent =
+    `${currentUser.staffName} / ${currentUser.storeName}`;
+
+  hideAllScreens();
+  document.getElementById("mypageScreen").classList.remove("hidden");
+
+  document.getElementById("mypageResult").innerHTML = `
+    <div class="review-box" style="text-align:center;">
+      <p>成績を集計中…</p>
+      <p class="small">順位・達成率を計算しています</p>
+    </div>
+  `;
+
+  await loadMyPage();
+}
+
+async function openStepHome() {
+  if (!currentUser) {
+    openAppLogin();
+    return;
+  }
+
+  document.getElementById("stepInfoText").textContent =
+    `${currentUser.staffName} / ${currentUser.storeName}`;
+
+  hideAllScreens();
+  document.getElementById("stepScreen").classList.remove("hidden");
+
+  document.getElementById("stepResult").innerHTML = `
+    <div class="review-box" style="text-align:center;">
+      <p>ステップ表を読み込み中…</p>
+      <p class="small">進捗を確認しています</p>
+    </div>
+  `;
+
+  await loadStepPage();
 }
 let stepItems = [];
 let stepProgressMap = {};
