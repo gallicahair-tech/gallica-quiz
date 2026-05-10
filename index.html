@@ -1159,13 +1159,7 @@ async function startQuiz() {
     document.getElementById("quizScreen").innerHTML = "<p>問題の読み込みに失敗しました。</p>";
   }
 }
-function confirmBackHome() {
-  const ok = confirm("テストの途中ですが、前のページに戻りますか？\n途中の結果は保存されません。");
 
-  if (ok) {
-    showHome();
-  }
-}
 function renderQuestion(genreName) {
   currentQuestionView = shuffleChoices(questions[current]);
   selected = null;
