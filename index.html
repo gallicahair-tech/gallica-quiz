@@ -1174,12 +1174,15 @@ function renderQuestion(genreName) {
   document.getElementById("answerFeedback").classList.add("hidden");
   document.getElementById("nextBtn").classList.add("hidden");
 
+  const q = currentQuestionView;
   const quizEl = document.getElementById("quizScreen");
-quizEl.innerHTML = `
-  <button class="sub-button" onclick="confirmBackHome()">前のページに戻る</button>
-  <p class="small">${genreName} ${current + 1} / ${questions.length}</p>
-  <h3>${q.q}</h3>
-`;
+
+  quizEl.innerHTML = `
+    <button class="sub-button" onclick="confirmBackHome()">前のページに戻る</button>
+    <p class="small">${genreName} ${current + 1} / ${questions.length}</p>
+    <h3>${q.q}</h3>
+  `;
+
   q.c.forEach((choice, i) => {
     quizEl.innerHTML += `
       <button id="choice-${i}" class="choice" onclick="selectChoice(${i})">
