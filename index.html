@@ -587,7 +587,9 @@ async function doStepLogin() {
 function getStepKey(itemId, countNo) {
   return `${itemId}__${countNo}`;
 }
-
+function setStepStageOpen(stage, isOpen) {
+  stepOpenMap[stage] = isOpen;
+}
 async function loadStepPage() {
   try {
     const itemRes = await fetch(GAS_URL, {
@@ -664,6 +666,7 @@ function renderStepPage() {
       <p><strong>全体進捗</strong></p>
       <p>${doneChecks} / ${totalChecks}</p>
       <p>${progressRate}%</p>
+      <p class="small">項目名をタップすると開閉できます</p>
     </div>
   `;
 
@@ -675,9 +678,48 @@ function renderStepPage() {
   });
 
   Object.keys(grouped).forEach(stage => {
-    html += `<div class="step-stage-title">${stage}</div>`;
+    const items = grouped[stage];
 
-    grouped[stage].forEach(item => {
+    let stageTotal = 0;
+    let stageDone = 0;
+
+    items.forEach(item => {
+      const requiredCount = Number(item.requiredCount || 1);
+
+      for (let i = 1; i <= requiredCount; i++) {
+        stageTotal++;
+        if (stepProgressMap[getStepKey(item.itemId, i)] === true) {
+          stageDone++;
+        }
+      }
+    });
+
+    const stageRate = stageTotal > 0
+      ? Math.round(stageDone / stageTotal * 100)
+      : 0;
+
+    const isOpen = stepOpenMap[stage] === true;
+
+    html += `
+      <details
+        class="step-accordion"
+        ${isOpen ? "open" : ""}
+        ontoggle="setStepStageOpen('${stage}', this.open)"
+      >
+        <summary>
+          <div class="step-summary-row">
+            <div>
+              <div class="step-summary-main">${stage}</div>
+              <div class="step-summary-sub">${stageDone} / ${stageTotal}　${stageRate}%</div>
+            </div>
+            <div class="step-summary-arrow">開く</div>
+          </div>
+        </summary>
+
+        <div class="step-stage-body">
+    `;
+
+    items.forEach(item => {
       const requiredCount = Number(item.requiredCount || 1);
       const checkType = item.checkType || "single";
 
@@ -722,6 +764,11 @@ function renderStepPage() {
 
       html += `</div>`;
     });
+
+    html += `
+        </div>
+      </details>
+    `;
   });
 
   document.getElementById("stepResult").innerHTML = html;
