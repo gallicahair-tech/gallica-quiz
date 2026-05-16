@@ -312,7 +312,45 @@ button:hover { background: #ececec; }
   background: #111;
   color: #fff;
   border-color: #111;
-}  
+}
+
+.genre-accordion {
+  margin-top: 18px;
+  border: 1px solid #e6e1d8;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.genre-accordion summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px;
+  font-weight: 700;
+  background: #f8f6f2;
+  border-bottom: 1px solid #e6e1d8;
+}
+
+.genre-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.genre-accordion-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.genre-accordion-title span {
+  font-size: 13px;
+  color: #777;
+  font-weight: 500;
+}
+
+.genre-accordion-body {
+  padding: 12px;
+}
+</style>
 </style>
 </head>
 
@@ -360,6 +398,13 @@ button:hover { background: #ececec; }
   <p class="small">受けたいジャンルを選んでください</p>
 
   <div class="genre-category">
+    <div class="genre-category-title">理念</div>
+    <div class="genre-grid">
+      <button class="genre-btn" onclick="selectGenre('理念について', this)">理念について</button>
+    </div>
+  </div>
+
+  <div class="genre-category">
     <div class="genre-category-title">チーム接客</div>
     <div class="genre-grid">
       <button class="genre-btn" onclick="selectGenre('チーム接客', this)">チーム接客</button>
@@ -373,43 +418,63 @@ button:hover { background: #ececec; }
     </div>
   </div>
 
-  <div class="genre-category">
-    <div class="genre-category-title">カウンセリング</div>
-    <div class="genre-grid">
-      <button class="genre-btn" onclick="selectGenre('カウンセリング基礎', this)">カウンセリング基礎</button>
-      <button class="genre-btn" onclick="selectGenre('カウンセリング・初級', this)">カウンセリング・初級</button>
-      <button class="genre-btn" onclick="selectGenre('カウンセリング・中級', this)">カウンセリング・中級</button>
-      <button class="genre-btn" onclick="selectGenre('カウンセリング・上級', this)">カウンセリング・上級</button>
+  <details class="genre-accordion">
+    <summary>
+      <div class="genre-accordion-title">
+        カウンセリング
+        <span>開く</span>
+      </div>
+    </summary>
+    <div class="genre-accordion-body">
+      <div class="genre-grid">
+        <button class="genre-btn" onclick="selectGenre('カウンセリング基礎', this)">カウンセリング基礎</button>
+        <button class="genre-btn" onclick="selectGenre('カウンセリング・初級', this)">カウンセリング・初級</button>
+        <button class="genre-btn" onclick="selectGenre('カウンセリング・中級', this)">カウンセリング・中級</button>
+        <button class="genre-btn" onclick="selectGenre('カウンセリング・上級', this)">カウンセリング・上級</button>
+      </div>
     </div>
-  </div>
+  </details>
 
-  <div class="genre-category">
-    <div class="genre-category-title">カラー</div>
-    <div class="genre-grid">
-      <button class="genre-btn" onclick="selectGenre('カラー基礎①', this)">カラー基礎①</button>
-      <button class="genre-btn" onclick="selectGenre('カラー基礎②', this)">カラー基礎②</button>
-      <button class="genre-btn" onclick="selectGenre('カラー実践・初級', this)">カラー実践・初級</button>
-      <button class="genre-btn" onclick="selectGenre('カラー実践・中級', this)">カラー実践・中級</button>
-      <button class="genre-btn" onclick="selectGenre('カラー実践・上級', this)">カラー実践・上級</button>
+  <details class="genre-accordion">
+    <summary>
+      <div class="genre-accordion-title">
+        カラー
+        <span>開く</span>
+      </div>
+    </summary>
+    <div class="genre-accordion-body">
+      <div class="genre-grid">
+        <button class="genre-btn" onclick="selectGenre('カラー基礎①', this)">カラー基礎①</button>
+        <button class="genre-btn" onclick="selectGenre('カラー基礎②', this)">カラー基礎②</button>
+        <button class="genre-btn" onclick="selectGenre('カラー実践・初級', this)">カラー実践・初級</button>
+        <button class="genre-btn" onclick="selectGenre('カラー実践・中級', this)">カラー実践・中級</button>
+        <button class="genre-btn" onclick="selectGenre('カラー実践・上級', this)">カラー実践・上級</button>
+      </div>
     </div>
-  </div>
+  </details>
 
-  <div class="genre-category">
-    <div class="genre-category-title">縮毛矯正</div>
-    <div class="genre-grid">
-      <button class="genre-btn" onclick="selectGenre('縮毛矯正基礎①', this)">縮毛矯正基礎①</button>
-      <button class="genre-btn" onclick="selectGenre('縮毛矯正基礎②', this)">縮毛矯正基礎②</button>
-      <button class="genre-btn" onclick="selectGenre('縮毛矯正実践・初級', this)">縮毛矯正実践・初級</button>
-      <button class="genre-btn" onclick="selectGenre('縮毛矯正実践・中級', this)">縮毛矯正実践・中級</button>
-      <button class="genre-btn" onclick="selectGenre('縮毛矯正実践・上級', this)">縮毛矯正実践・上級</button>
+  <details class="genre-accordion">
+    <summary>
+      <div class="genre-accordion-title">
+        縮毛矯正
+        <span>開く</span>
+      </div>
+    </summary>
+    <div class="genre-accordion-body">
+      <div class="genre-grid">
+        <button class="genre-btn" onclick="selectGenre('縮毛矯正基礎①', this)">縮毛矯正基礎①</button>
+        <button class="genre-btn" onclick="selectGenre('縮毛矯正基礎②', this)">縮毛矯正基礎②</button>
+        <button class="genre-btn" onclick="selectGenre('縮毛矯正実践・初級', this)">縮毛矯正実践・初級</button>
+        <button class="genre-btn" onclick="selectGenre('縮毛矯正実践・中級', this)">縮毛矯正実践・中級</button>
+        <button class="genre-btn" onclick="selectGenre('縮毛矯正実践・上級', this)">縮毛矯正実践・上級</button>
+      </div>
     </div>
-  </div>
+  </details>
 
   <button onclick="openGenreCover()">次へ</button>
   <button class="sub-button" onclick="backHome()">前のページに戻る</button>
   <div id="staffError" class="error"></div>
 </div>
-<div id="genreCoverScreen" class="card genre-hero hidden">
   <h1 id="genreTitle">QUIZ</h1>
   <p id="genreSubtitle">knowledge check</p>
  <p class="small">準備ができたらスタートしてください</p>
@@ -455,9 +520,9 @@ button:hover { background: #ececec; }
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyUZcYz2r1j8QNc-dEz0vudcxoIgzog1d_B95AgZpnhqbws1FqbdCy1e4yG-ScNNPt3/exec";
 
 const genreMeta = {
+  "理念について": { short: "PHILOSOPHY QUIZ" },
   "チーム接客": { short: "TEAM SERVICE QUIZ" },
   "商品説明": { short: "PRODUCT KNOWLEDGE QUIZ" },
-
   "カウンセリング基礎": { short: "COUNSELING BASIC QUIZ" },
   "カウンセリング・初級": { short: "COUNSELING BEGINNER QUIZ" },
   "カウンセリング・中級": { short: "COUNSELING INTERMEDIATE QUIZ" },
@@ -477,6 +542,7 @@ const genreMeta = {
 };
 
 const genreOrder = [
+  "理念について",
   "チーム接客",
   "商品説明",
 
@@ -499,6 +565,7 @@ const genreOrder = [
 ];
 
 const categoryGroups = {
+  "理念": ["理念について"],
   "チーム接客": ["チーム接客"],
   "商品説明": ["商品説明"],
   "カウンセリング": [
