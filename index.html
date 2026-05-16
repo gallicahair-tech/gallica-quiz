@@ -351,7 +351,6 @@ button:hover { background: #ececec; }
   padding: 12px;
 }
 </style>
-</style>
 </head>
 
 <body>
@@ -472,14 +471,17 @@ button:hover { background: #ececec; }
   </details>
 
   <button onclick="openGenreCover()">次へ</button>
+    <button onclick="openGenreCover()">次へ</button>
   <button class="sub-button" onclick="backHome()">前のページに戻る</button>
   <div id="staffError" class="error"></div>
 </div>
+
+<div id="genreCoverScreen" class="card genre-hero hidden">
   <h1 id="genreTitle">QUIZ</h1>
   <p id="genreSubtitle">knowledge check</p>
- <p class="small">準備ができたらスタートしてください</p>
-<button onclick="startQuiz()">スタート</button>
-<button class="sub-button" onclick="openQuizHome()">前のページに戻る</button>
+  <p class="small">準備ができたらスタートしてください</p>
+  <button onclick="startQuiz()">スタート</button>
+  <button class="sub-button" onclick="openQuizHome()">前のページに戻る</button>
 </div>
 
 <div id="quizScreen" class="card hidden"></div>
