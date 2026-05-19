@@ -568,9 +568,39 @@ const genreOrder = [
 ];
 
 const categoryGroups = {
-  "理念": ["理念について"],
-  "チーム接客": ["チーム接客"],
-  "商品説明": ["商品説明"],
+  "Gallicaについて": [
+    "理念について",
+    "チーム接客",
+    "商品説明"
+  ],
+  "カウンセリング": [
+    "カウンセリング基礎",
+    "カウンセリング・初級",
+    "カウンセリング・中級",
+    "カウンセリング・上級"
+  ],
+  "カラー": [
+    "カラー基礎①",
+    "カラー基礎②",
+    "カラー実践・初級",
+    "カラー実践・中級",
+    "カラー実践・上級"
+  ],
+  "縮毛矯正": [
+    "縮毛矯正基礎①",
+    "縮毛矯正基礎②",
+    "縮毛矯正実践・初級",
+    "縮毛矯正実践・中級",
+    "縮毛矯正実践・上級"
+  ]
+};
+
+const myPageCategoryOrder = [
+  "Gallicaについて",
+  "カウンセリング",
+  "カラー",
+  "縮毛矯正"
+];
   "カウンセリング": [
     "カウンセリング基礎",
     "カウンセリング・初級",
@@ -1385,10 +1415,29 @@ function nextQuestion() {
 }
 
 function getRankingValue(row) {
-  return Number(row.totalRate ?? row.overallRate ?? row.rate ?? row.score ?? 0);
+  return Number(row.overallRate ?? row.totalRate ?? row.rate ?? row.score ?? 0);
 }
 
-async function loadMyRank() {
+function getRankFromRanking(rankingData, valueGetter) {
+  if (!rankingData || !rankingData.length || !currentUser) return null;
+
+  const me = rankingData.find(r => r.staffId === currentUser.staffId);
+  if (!me) return null;
+
+  const myValue = Number(valueGetter(me) || 0);
+
+  const higherCount = rankingData.filter(r => {
+    return Number(valueGetter(r) || 0) > myValue;
+  }).length;
+
+  return {
+    rank: higherCount + 1,
+    total: rankingData.length,
+    value: myValue
+  };
+}
+
+async function loadRankingData() {
   try {
     const res = await fetch(GAS_URL, {
       method: "POST",
@@ -1397,28 +1446,69 @@ async function loadMyRank() {
     });
 
     const data = await res.json();
-    if (!data.ok || !data.ranking) return null;
 
-    const me = data.ranking.find(r => r.staffId === currentUser.staffId);
-    if (!me) return null;
+    if (!data.ok || !data.ranking) return [];
 
-    const myValue = getRankingValue(me);
+    return data.ranking;
 
-    const higherCount = data.ranking.filter(r => {
-      return getRankingValue(r) > myValue;
-    }).length;
-
-    return {
-      rank: higherCount + 1,
-      total: data.ranking.length
-    };
   } catch (e) {
     console.error(e);
-    return null;
+    return [];
   }
 }
 
-function finishQuiz(genreName) {
+async function loadMyRank() {
+  const rankingData = await loadRankingData();
+
+  return getRankFromRanking(rankingData, row => {
+    return getRankingValue(row);
+  });
+}
+
+function getCategoryRankFromData(rankingData, categoryName) {
+  return getRankFromRanking(rankingData, row => {
+    return Number((row.categoryRates || {})[categoryName] || 0);
+  });
+}
+
+function normalizeTestName(testName) {
+  const name = String(testName || "").trim();
+
+  const aliases = {
+    "チーム接客基礎": "チーム接客",
+
+    "カウンセリング初級": "カウンセリング・初級",
+    "カウンセリング中級": "カウンセリング・中級",
+    "カウンセリング上級": "カウンセリング・上級",
+
+    "カラー基礎": "カラー基礎①",
+    "カラー初級": "カラー実践・初級",
+    "カラー中級": "カラー実践・中級",
+    "カラー上級": "カラー実践・上級",
+
+    "縮毛矯正基礎": "縮毛矯正基礎①",
+    "縮毛矯正初級": "縮毛矯正実践・初級",
+    "縮毛矯正中級": "縮毛矯正実践・中級",
+    "縮毛矯正上級": "縮毛矯正実践・上級"
+  };
+
+  return aliases[name] || name;
+}
+
+function getAverageRateByGenres(bestScores, genres) {
+  if (!genres || !genres.length) return 0;
+
+  const total = genres.reduce((sum, genreName) => {
+    return sum + Number(bestScores[genreName] || 0);
+  }, 0);
+
+  return Math.round(total / genres.length);
+}
+
+function getTakenCountByGenres(bestScores, genres) {
+  return genres.filter(name => bestScores[name] !== undefined).length;
+}
+async function finishQuiz(genreName) {
   hideAllScreens();
   document.getElementById("resultScreen").classList.remove("hidden");
 
@@ -1438,8 +1528,8 @@ function finishQuiz(genreName) {
 <button class="sub-button" onclick="backHome()">前のページに戻る</button>
   `;
 
-  saveResult(rate, genreName);
-  showMyRankInResult();
+  await saveResult(rate, genreName);
+await showMyRankInResult();
 }
 
 async function showMyRankInResult() {
@@ -1451,11 +1541,11 @@ async function showMyRankInResult() {
 
   box.style.display = "block";
   box.innerHTML = `
-    <div class="rank-title">あなたの順位</div>
+    <div class="rank-title">総合達成度順位</div>
     <p>${rankData.rank}位 / ${rankData.total}人中</p>
+    <p class="small">総合達成度：${rankData.value}%</p>
   `;
 }
-
 async function saveResult(rate, genreName) {
   try {
     await fetch(GAS_URL, {
@@ -1494,37 +1584,36 @@ async function loadMyPage() {
 
     const bestScores = {};
     let latestDate = null;
-    let latestGenre = "";
 
     data.forEach(r => {
       const dateValue = r[0];
       const score = Number(r[4] || 0);
       const total = Number(r[5] || 0);
-      const testName = String(r[7] || "").trim();
+      const rawTestName = String(r[7] || "").trim();
+      const testName = normalizeTestName(rawTestName);
       const percent = total > 0 ? Math.round(score / total * 100) : 0;
 
-      if (testName === "チーム接客基礎") {
-        bestScores["チーム接客"] = Math.max(bestScores["チーム接客"] || 0, percent);
-      } else {
-        if (!bestScores[testName] || bestScores[testName] < percent) {
-          bestScores[testName] = percent;
-        }
+      if (!bestScores[testName] || bestScores[testName] < percent) {
+        bestScores[testName] = percent;
       }
 
       const rowDate = new Date(dateValue);
       if (!latestDate || rowDate > latestDate) {
         latestDate = rowDate;
-        latestGenre = testName === "チーム接客基礎" ? "チーム接客" : testName;
       }
     });
 
-    const takenGenresCount = genreOrder.filter(name => bestScores[name] !== undefined).length;
+    const takenGenresCount = genreOrder.filter(name => {
+      return bestScores[name] !== undefined;
+    }).length;
+
     const totalGenres = genreOrder.length;
+    const overallRate = getAverageRateByGenres(bestScores, genreOrder);
 
-    const totalPercent = genreOrder.reduce((sum, name) => sum + (bestScores[name] || 0), 0);
-    const overallRate = Math.round(totalPercent / totalGenres);
+    const masteredCount = genreOrder.filter(name => {
+      return Number(bestScores[name] || 0) === 100;
+    }).length;
 
-    const masteredCount = genreOrder.filter(name => (bestScores[name] || 0) === 100).length;
     const remainForMaster = totalGenres - masteredCount;
 
     function formatDate(dateObj) {
@@ -1563,49 +1652,44 @@ async function loadMyPage() {
       };
     }
 
-    function getRecommendedGenre() {
-      const notTaken = genreOrder.find(name => bestScores[name] === undefined);
-      if (notTaken) return notTaken;
-
-      const under100 = genreOrder
-        .map(name => ({ name, score: bestScores[name] || 0 }))
-        .filter(item => item.score < 100)
-        .sort((a, b) => a.score - b.score);
-
-      if (under100.length > 0) return under100[0].name;
-      return "全分野達成済み";
+    function getCategoryMasters() {
+      return Object.entries(categoryGroups)
+        .filter(([categoryName, genres]) => {
+          return genres.every(name => Number(bestScores[name] || 0) === 100);
+        })
+        .map(([categoryName]) => `${categoryName}マスター`);
     }
-function getCategoryMasters() {
-  return Object.entries(categoryGroups)
-    .filter(([categoryName, genres]) => {
-      return genres.every(name => (bestScores[name] || 0) === 100);
-    })
-    .map(([categoryName]) => `${categoryName}マスター`);
-}
 
-const categoryMasters = getCategoryMasters();
+    const rankingData = await loadRankingData();
+    const overallRank = getRankFromRanking(rankingData, row => {
+      return getRankingValue(row);
+    });
+
+    const categoryMasters = getCategoryMasters();
     const title = getTitle(bestScores);
-    const rankData = await loadMyRank();
 
     let html = `
       <h3>${currentUser.staffName} さん</h3>
       <h4>称号：${title}</h4>
-${categoryMasters.length ? `
-  <div class="review-box">
-    <p><strong>分野マスター</strong></p>
-    <p>${categoryMasters.join(" / ")}</p>
-  </div>
-` : ""}
-      ${rankData ? `
-      <div class="rank-box">
-        <div class="rank-title">あなたの順位</div>
-        <p>${rankData.rank}位 / ${rankData.total}人中</p>
-      </div>` : ""}
+
+      ${categoryMasters.length ? `
+        <div class="review-box">
+          <p><strong>分野マスター</strong></p>
+          <p>${categoryMasters.join(" / ")}</p>
+        </div>
+      ` : ""}
 
       <div class="review-box">
-        <p><strong>総合達成率</strong></p>
+        <p><strong>総合達成度</strong></p>
         <p>${overallRate}%</p>
       </div>
+
+      ${overallRank ? `
+        <div class="rank-box">
+          <div class="rank-title">総合達成度順位</div>
+          <p>${overallRank.rank}位 / ${overallRank.total}人中</p>
+        </div>
+      ` : ""}
 
       <div class="review-box">
         <p><strong>受験済み分野数</strong></p>
@@ -1618,35 +1702,55 @@ ${categoryMasters.length ? `
       </div>
 
       <div class="review-box">
-        <p><strong>最後に受けたジャンル</strong></p>
-        <p>${latestGenre || "未受験"}</p>
-      </div>
-
-      <div class="review-box">
-        <p><strong>次におすすめのジャンル</strong></p>
-        <p>${getRecommendedGenre()}</p>
-      </div>
-
-      <div class="review-box">
         <p><strong>Masterまであと何分野か</strong></p>
         <p>${remainForMaster}分野</p>
       </div>
+
+      <div class="section-title">カテゴリー別達成状況</div>
     `;
 
-    html += `<div class="section-title">ジャンル別達成状況</div>`;
-
-    genreOrder.forEach(name => {
-      const isTaken = bestScores[name] !== undefined;
-      const percent = bestScores[name] || 0;
-      const status = getDisplayStatus(percent, isTaken);
+    myPageCategoryOrder.forEach(categoryName => {
+      const genres = categoryGroups[categoryName] || [];
+      const categoryRate = getAverageRateByGenres(bestScores, genres);
+      const categoryTaken = getTakenCountByGenres(bestScores, genres);
+      const categoryRank = getCategoryRankFromData(rankingData, categoryName);
 
       html += `
-        <div class="review-box">
-          <p><strong>${name}</strong></p>
-          <p>${status.text}</p>
-          ${status.stars ? `<div class="star">${status.stars}</div>` : ""}
-          <div class="badge">${status.badge}</div>
-        </div>
+        <details class="genre-accordion">
+          <summary>
+            <div class="genre-accordion-title">
+              <div>
+                ${categoryName}
+                <div class="small">
+                  達成度 ${categoryRate}% ／ 受験済み ${categoryTaken} / ${genres.length}
+                  ${categoryRank ? ` ／ ${categoryRank.rank}位 / ${categoryRank.total}人中` : ""}
+                </div>
+              </div>
+              <span>開く</span>
+            </div>
+          </summary>
+
+          <div class="genre-accordion-body">
+      `;
+
+      genres.forEach(name => {
+        const isTaken = bestScores[name] !== undefined;
+        const percent = bestScores[name] || 0;
+        const status = getDisplayStatus(percent, isTaken);
+
+        html += `
+          <div class="review-box">
+            <p><strong>${name}</strong></p>
+            <p>${status.text}</p>
+            ${status.stars ? `<div class="star">${status.stars}</div>` : ""}
+            <div class="badge">${status.badge}</div>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </details>
       `;
     });
 
